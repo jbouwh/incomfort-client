@@ -76,7 +76,7 @@ class Gateway(InComfortClient):
             # self.async_status()
         # )
 
-        self.async_status()
+        await self.async_status()
 
 #       loop.close()
 
