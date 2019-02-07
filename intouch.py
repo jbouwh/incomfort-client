@@ -14,6 +14,9 @@ import aiohttp
 
 _LOGGER = logging.getLogger(__name__)
 
+HTTP_STATUS_OK = 200
+
+INVALID_VALUE = (2**15-1)/100.0
 SERIAL_LINE = '0123456789abcdefghijklmnopqrstuvwxyz'
 
 # key label: IO
@@ -43,13 +46,14 @@ DISPLAY_CODES = {
 
 def _convert(MostSignificantByte, LeastSignificantByte) -> float:
     _value = (MostSignificantByte * 256 + LeastSignificantByte) / 100.0
-    return None if _value == 327.67 else _value
+    return _value if _value is not INVALID_VALUE else None
+
 
 async def async_get(session, url):
-    _LOGGER.error("async_get(session, url=%s)", url)
+    _LOGGER.debug("async_get(session, url=%s)", url)
 
     async with session.get(url) as response:
-        assert response.status == 200
+        assert response.status == HTTP_STATUS_OK
         return await response.json(content_type=None)
 
 
@@ -61,7 +65,7 @@ class InComfortClient(object):
 class Gateway(InComfortClient):
     def __init__(self, hostname):
 
-        _LOGGER.error("__init__(hostname=%s)", hostname)
+        _LOGGER.debug("__init__(hostname=%s)", hostname)
 
         self._name = hostname
         self._data = None
@@ -72,23 +76,21 @@ class Gateway(InComfortClient):
         )
 
 #       loop.close()
-        print("__init__(): ")
 
     async def async_status(self, heater=0):
         """Retrieve the Heater's status from the Gateway.
 
         GET <ip address>/data.json?heater=<nr>
         """
-        _LOGGER.error("async_status(heater=%s)", heater)
+        _LOGGER.debug("async_status(heater=%s)", heater)
 
         timeout = aiohttp.ClientTimeout(total=10)
         async with aiohttp.ClientSession(timeout=timeout) as session:
-            print("async_status(): ")
             url = 'http://{0}/data.json?heater=0'.format(self._name)
             self._data = await async_get(session, url)
 #           print("async_status(): %s", self._data)
 
-        _LOGGER.error("async_status(heater=%s) = ", self._data)
+        _LOGGER.debug("async_status(heater=%s) = ", self._data)
 
     @property
     def status_raw(self) -> dict:
@@ -98,11 +100,11 @@ class Gateway(InComfortClient):
     @property
     def status(self) -> dict:
         """Return the current state of the heater."""
-        _LOGGER.error("status()")
+        _LOGGER.debug("status()")
         status = {}
 
         status['display_code'] = self.display_code
-        status['display_code_str'] = self.display_code_str
+        status['display_text'] = self.display_text
         status['fault_code'] = self.fault_code
 
         status['is_burning'] = self.is_burning
@@ -116,11 +118,11 @@ class Gateway(InComfortClient):
 
         status['serial_no'] = self.serial_no
 
-        _LOGGER.error("status() = %s", status)
+        _LOGGER.debug("status() = %s", status)
         return status
 
     @property
-    def display_code_str(self) -> str:
+    def display_text(self) -> str:
         """Return the display code as a string rather than a number.
 
         If the heater is in a failed state, this will be the 'fault_code'.
@@ -192,7 +194,7 @@ class Gateway(InComfortClient):
 
 # python intouch.py [--raw] hostname/address
 def main():
-    _LOGGER.error("main()")
+    _LOGGER.debug("main()")
 
     parser = argparse.ArgumentParser()
 
