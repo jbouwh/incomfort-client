@@ -1,7 +1,7 @@
 # intouch-client
 
-Python client for Intergas boilers attached to a Lan2RF gateway.
+Python client library for Intergas InTouch-compatible boilers (i.e. attached to a Lan2RF gateway). Includes a CLI. 
 
-Includes a client API and a CLI. Uses **aiohttp** rather than synchronous I/O (e.g. requests).
+Based upon https://github.com/bwesterb/incomfort, but uses **aiohttp** rather than synchronous I/O (e.g. httplib, requests). 
 
-Support for thermostats will be added in a future version.
+Support for InComfort thermostats will be added in a future version.
