@@ -11,10 +11,9 @@ import asyncio
 import logging
 
 import aiohttp
+# from http import HTTPStatus
 
-_LOGGER = logging.getLogger(__name__)
-
-HTTP_STATUS_OK = 200
+HTTP_OK = 200
 
 INVALID_VALUE = (2**15-1)/100.0
 SERIAL_LINE = '0123456789abcdefghijklmnopqrstuvwxyz'
@@ -43,6 +42,8 @@ DISPLAY_CODES = {
     255: 'buffer'
 }
 
+_LOGGER = logging.getLogger(__name__)
+
 
 def _convert(MostSignificantByte, LeastSignificantByte) -> float:
     _value = (MostSignificantByte * 256 + LeastSignificantByte) / 100.0
@@ -53,7 +54,7 @@ async def async_get(session, url):
     _LOGGER.debug("async_get(session, url=%s)", url)
 
     async with session.get(url) as response:
-        assert response.status == HTTP_STATUS_OK
+        assert response.status == HTTP_OK  # cheaper than: HTTPStatus.OK
         return await response.json(content_type=None)
 
 
