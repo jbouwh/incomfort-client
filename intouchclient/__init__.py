@@ -64,18 +64,16 @@ class InComfortClient(object):
 
 
 class Gateway(InComfortClient):
-    def __init__(self, hostname):
+    async def __init__(self, hostname):
 
         _LOGGER.debug("__init__(hostname=%s)", hostname)
 
         self._name = hostname
         self._data = None
 
-#       await self.async_status()
-        self.async_status()
+        await self.async_status()
 
-#   async def async_status(self, heater=0):
-    def async_status(self, heater=0):
+    async def async_status(self, heater=0):
         """Retrieve the Heater's status from the Gateway.
 
         GET <ip address>/data.json?heater=<nr>
@@ -83,11 +81,9 @@ class Gateway(InComfortClient):
         _LOGGER.debug("async_status(heater=%s)", heater)
 
         timeout = aiohttp.ClientTimeout(total=10)
-#       async with aiohttp.ClientSession(timeout=timeout) as session:
-        with aiohttp.ClientSession(timeout=timeout) as session:
+        async with aiohttp.ClientSession(timeout=timeout) as session:
             url = 'http://{0}/data.json?heater=0'.format(self._name)
-#           self._data = await async_get(session, url)
-            self._data = async_get(session, url)
+            self._data = await async_get(session, url)
 
         _LOGGER.debug("async_status(heater=%s) = ", self._data)
 
