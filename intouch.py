@@ -106,8 +106,8 @@ class Gateway(InComfortClient):
         status['fault_code'] = self.fault_code
 
         status['is_burning'] = self.is_burning
-        status['is_pumping'] = self.is_failed
-        status['ch_temp'] = self.is_pumping
+        status['is_failed'] = self.is_failed
+        status['is_pumping'] = self.is_pumping
         status['is_tap_on'] = self.is_tap_on
 
         status['ch_temp'] = self.ch_temp
