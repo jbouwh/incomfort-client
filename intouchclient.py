@@ -71,10 +71,12 @@ class Gateway(InComfortClient):
         self._name = hostname
         self._data = None
 
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(
-            self.async_status()
-        )
+        # loop = asyncio.get_event_loop()
+        # loop.run_until_complete(
+            # self.async_status()
+        # )
+
+        self.async_status()
 
 #       loop.close()
 
@@ -194,7 +196,7 @@ class Gateway(InComfortClient):
 
 
 # python intouch.py [--raw] hostname/address
-def main():
+async def main(loop):
     _LOGGER.debug("main()")
 
     parser = argparse.ArgumentParser()
@@ -219,4 +221,5 @@ def main():
 if __name__ == '__main__':
     import argparse
 
-    main()
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main(loop))
