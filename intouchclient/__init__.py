@@ -71,16 +71,11 @@ class Gateway(InComfortClient):
         self._name = hostname
         self._data = None
 
-        # loop = asyncio.get_event_loop()
-        # loop.run_until_complete(
-            # self.async_status()
-        # )
+#       await self.async_status()
+        self.async_status()
 
-        return await self.async_status()
-
-#       loop.close()
-
-    async def async_status(self, heater=0):
+#   async def async_status(self, heater=0):
+    def async_status(self, heater=0):
         """Retrieve the Heater's status from the Gateway.
 
         GET <ip address>/data.json?heater=<nr>
@@ -91,12 +86,11 @@ class Gateway(InComfortClient):
         async with aiohttp.ClientSession(timeout=timeout) as session:
             url = 'http://{0}/data.json?heater=0'.format(self._name)
             self._data = await async_get(session, url)
-#           print("async_status(): %s", self._data)
 
         _LOGGER.debug("async_status(heater=%s) = ", self._data)
 
     @property
-    def status_raw(self) -> dict:
+    def _status(self) -> dict:
         """Return the current state of the heater."""
         return dict(self._data)
 
@@ -212,7 +206,7 @@ async def main(loop):
     gateway = Gateway(args.gateway)
 
     if args.raw:
-        print(gateway.status_raw)
+        print(gateway._status)
     else:
         print(gateway.status)
 
@@ -223,3 +217,4 @@ if __name__ == '__main__':
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main(loop))
+    loop.close()
