@@ -20,7 +20,7 @@ SERIAL_LINE = '0123456789abcdefghijklmnopqrstuvwxyz'
 BITMASK_BURNER = 0x08  # burner state: on / off
 BITMASK_FAIL = 0x01  # failure state: on / off
 BITMASK_PUMP = 0x02  # pump state: on / off
-BITMASK_TAP = 0x04  # tap state: function on / off
+BITMASK_TAP = 0x04  # tap (DHW) state: function on / off
 
 # key label: displ_code
 DISPLAY_CODES = {
@@ -110,9 +110,9 @@ class Gateway(InComfortClient):
         status['is_pumping'] = self.is_pumping
         status['is_tap_on'] = self.is_tap_on
 
-        status['ch_temp'] = self.ch_temp
+        status['heater_temp'] = self.heater_temp
         status['tap_temp'] = self.tap_temp
-        status['ch_pressure'] = self.ch_pressure
+        status['pressure'] = self.pressure
 
         status['serial_no'] = self.serial_no
 
@@ -161,7 +161,7 @@ class Gateway(InComfortClient):
         return bool(self._data['IO'] & BITMASK_TAP)
 
     @property
-    def ch_temp(self) -> float:
+    def heater_temp(self) -> float:
         """Return the supply temperature of the CH/CV (circulating volume)."""
         return _convert(self._data['ch_temp_msb'],
                         self._data['ch_temp_lsb'])
@@ -173,7 +173,7 @@ class Gateway(InComfortClient):
                         self._data['tap_temp_lsb'])
 
     @property
-    def ch_pressure(self) -> float:
+    def pressure(self) -> float:
         """Return the water pressure of the CH (central heating)."""
         return _convert(self._data['ch_pressure_msb'],
                         self._data['ch_pressure_lsb'])
