@@ -50,8 +50,8 @@ def _convert(MostSignificantByte, LeastSignificantByte) -> float:
     return _value if _value is not INVALID_VALUE else None
 
 
-async def async_get(session, url):
-    _LOGGER.debug("async_get(session, url=%s)", url)
+async def _get(session, url):
+    _LOGGER.debug("_get(session, url=%s)", url)
 
     async with session.get(url) as response:
         assert response.status == HTTP_OK  # cheaper than: HTTPStatus.OK
@@ -71,21 +71,23 @@ class Gateway(InComfortClient):
         self._name = hostname
         self._data = None
 
-        await self.async_status()
+        await self._get_status()
 
-    async def async_status(self, heater=0):
+        return None
+
+    async def _get_status(self, heater=0):
         """Retrieve the Heater's status from the Gateway.
 
         GET <ip address>/data.json?heater=<nr>
         """
-        _LOGGER.debug("async_status(heater=%s)", heater)
+        _LOGGER.debug("_get_status(heater=%s)", heater)
 
         timeout = aiohttp.ClientTimeout(total=10)
         async with aiohttp.ClientSession(timeout=timeout) as session:
             url = 'http://{0}/data.json?heater=0'.format(self._name)
-            self._data = await async_get(session, url)
+            self._data = await _get(session, url)
 
-        _LOGGER.debug("async_status(heater=%s) = ", self._data)
+        _LOGGER.debug("_get_status(heater=%s) = ", self._data)
 
     @property
     def _status(self) -> dict:
