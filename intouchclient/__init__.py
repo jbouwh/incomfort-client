@@ -86,7 +86,8 @@ class Gateway(InComfortClient):
 #       async with aiohttp.ClientSession(timeout=timeout) as session:
         with aiohttp.ClientSession(timeout=timeout) as session:
             url = 'http://{0}/data.json?heater=0'.format(self._name)
-            self._data = await async_get(session, url)
+#           self._data = await async_get(session, url)
+            self._data = async_get(session, url)
 
         _LOGGER.debug("async_status(heater=%s) = ", self._data)
 
