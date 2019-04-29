@@ -12,12 +12,13 @@ import logging
 
 import aiohttp
 
-INVALID_VALUE = (2**15-1)/100.0
+INVALID_TEMP = (2**15-1)/100.0
+
 SERIAL_LINE = '0123456789abcdefghijklmnopqrstuvwxyz'
 
 # key label: IO
 BITMASK_BURNER = 0x08  # burner state: on / off
-BITMASK_FAIL = 0x01  # failure state: on / off
+BITMASK_FAIL = 0x01  # failure state: on / off (aka lockout)
 BITMASK_PUMP = 0x02  # pump state: on / off
 BITMASK_TAP = 0x04  # tap (DHW) state: function on / off
 
@@ -46,18 +47,24 @@ _LOGGER = logging.getLogger(__name__)
 
 def _convert(most_significant_byte, least_significant_byte) -> float:
     _value = (most_significant_byte * 256 + least_significant_byte) / 100.0
-    return _value if _value is not INVALID_VALUE else None
+    return _value if _value is not INVALID_TEMP else None
 
 
-async def _get(session, url):
-    _LOGGER.debug("_get(session, url=%s)", url)
+async def _get(url, session):
+    _LOGGER.debug("_get(url=%s)", url)
 
-    async with session.get(url) as response:
+    async with session.get(
+        url,
+        timeout=aiohttp.ClientTimeout(total=10)
+    ) as response:
         assert response.status == HTTP_OK
-        return await response.json(content_type=None)
+        response = await response.json(content_type=None)
+
+    _LOGGER.warn("_get(url=%s): response = %s", url, response)
+    return response
 
 
-class InComfortClient(object):
+class InComfortGateway(object):
     def __init__(self, hostname, session=None, debug=False):
         if debug is True:
             _LOGGER.setLevel(logging.DEBUG)
@@ -66,52 +73,43 @@ class InComfortClient(object):
             _LOGGER.debug("Debug mode is not explicitly enabled "
                           "(but may be enabled elsewhere).")
 
-        _LOGGER.info("InComfortClient()")
+        _LOGGER.info("InComfortGateway.__init__()")
+
+        self._name = hostname
 
         # TODO: use existing session if one was provided (needs fixing)
         self._session = session if session else aiohttp.ClientSession()
 
-        self.gateway = InComfortGateway(hostname=hostname)
+    @property
+    async def heaterlist(self) -> list:
+        # {"heaterlist":["1709t023082",null,null,null,null,null,null,null]}
+        _LOGGER.debug("InComfortGateway.heaterlist")
+
+        url = 'http://{0}/heaterlist.json'.format(self._name)
+        heaterlist = await _get(url, self._session)
+
+        return [InComfortHeater(h, self)
+                for h in heaterlist['heaterlist'] if h]
 
 
-class InComfortGateway(object):
-    def __init__(self, hostname=None):
+class InComfortHeater(object):
+    def __init__(self, serial_no, gateway):
 
-        _LOGGER.debug("__init__(hostname=%s)", hostname)
+        _LOGGER.debug("InComfortHeater.__init__(serial_no=%s)", serial_no)
 
-        self._name = hostname
+        self._gateway = gateway
+        self._serial_no = serial_no
         self._data = None
 
-        return None
-
-    async def _get_status(self, heater=0):
+    async def update(self):
         """Retrieve the Heater's status from the Gateway.
 
         GET http://<ip address>/data.json?heater=<nr>
         """
-        _LOGGER.debug("_get_status(heater=%s)", heater)
-
-        timeout = aiohttp.ClientTimeout(total=10)
-        async with aiohttp.ClientSession(timeout=timeout) as session:
-            url = 'http://{0}/data.json?heater=0'.format(self._name)
-            self._data = await _get(session, url)
-
-        _LOGGER.debug("_get_status(heater=%s) = ", self._data)
-
-    async def update(self):
         _LOGGER.debug("update()")
 
-        timeout = aiohttp.ClientTimeout(total=10)
-        async with aiohttp.ClientSession(timeout=timeout) as session:
-            url = 'http://{0}/data.json?heater=0'.format(self._name)
-            self._data = await _get(session, url)
-
-    @property
-    def _status(self) -> dict:
-        """Return the current state of the heater."""
-        _status = dict(self._data)
-        _LOGGER.debug("_status() = %s", _status)
-        return _status
+        url = 'http://{0}/data.json?heater=0'.format(self._gateway._name)
+        self._data = await _get(url, self._gateway._session)
 
     @property
     def status(self) -> dict:
@@ -159,7 +157,7 @@ class InComfortGateway(object):
     @property
     def fault_code(self) -> int:
         _code = self._data['displ_code']
-        return _code if self.is_failed else None
+        return _code if self.is_failed else 0
 
     @property
     def is_burning(self) -> bool:
@@ -179,13 +177,13 @@ class InComfortGateway(object):
 
     @property
     def heater_temp(self) -> float:
-        """Return the supply temperature of the CH/CV (circulating volume)."""
+        """Return the supply temperature of the CV (circulating volume)."""
         return _convert(self._data['ch_temp_msb'],
                         self._data['ch_temp_lsb'])
 
     @property
     def tap_temp(self) -> float:
-        """Return the current temperature of the tap (HW, hot water)."""
+        """Return the current temperature of the HW (hot water)."""
         return _convert(self._data['tap_temp_msb'],
                         self._data['tap_temp_lsb'])
 
@@ -205,8 +203,64 @@ class InComfortGateway(object):
                 str(self._data['serial_sn2']) +
                 str(self._data['serial_sn3']))
 
+    @property
+    def roomlist(self) -> list:
+        return [InComfortRoom('1', self, self._gateway),
+                InComfortRoom('2', self, self._gateway)]
 
-# python intouch.py [--raw] hostname/address
+
+class InComfortRoom(object):
+    def __init__(self, room_no, heater, gateway):
+        _LOGGER.debug("InComfortRoom.__init__(room_no=%s)", room_no)
+
+        self._gateway = gateway
+        self._heater = heater
+        self.room_no = room_no
+
+        self._data = heater._data
+
+    @property
+    def status(self) -> dict:
+        """Return the current state of the room."""
+        status = {}
+
+        status['temperature'] = self.temperature
+        status['setpoint'] = self.setpoint
+        status['override'] = self.override
+
+        _LOGGER.debug("status() = %s", status)
+        return status
+
+    @property
+    def temperature(self) -> float:
+        """Return the current temperature of the room."""
+        return _convert(
+            self._data['room_temp_{}_msb'.format(self.room_no)],
+            self._data['room_temp_{}_lsb'.format(self.room_no)])
+
+    @property
+    def setpoint(self) -> float:
+        """Return the (scheduled?) setpoint temperature of the room."""
+        return _convert(
+            self._data['room_temp_set_{}_msb'.format(self.room_no)],
+            self._data['room_temp_set_{}_lsb'.format(self.room_no)])
+
+    @property
+    def override(self) -> float:
+        """Return the override setpoint temperature of the room."""
+        return _convert(
+            self._data['room_set_ovr_{}_msb'.format(self.room_no)],
+            self._data['room_set_ovr_{}_lsb'.format(self.room_no)])
+
+    async def set_override(self, setpoint):
+        url = 'http://{}/data.json?heater=0&thermostat={}&setpoint={}'.format(
+            self._gateway._name,
+            self.room_no,
+            int((min(max(setpoint, 5), 30) - 5.0) * 10))
+
+        response = await _get(url, self._gateway._session)
+
+
 async def main(loop):
     import argparse
     _LOGGER.debug("main()")
@@ -223,19 +277,21 @@ async def main(loop):
     # TODO: provide a session (needs fixing)
     session = aiohttp.ClientSession()
 
-    client = InComfortClient(args.gateway, session=session)
-    gateway = client.gateway
-    await gateway.update()
+    gateway = InComfortGateway(args.gateway, session=session)
+    heaterlist = await gateway.heaterlist
+
+    await heaterlist[0].update()
+    # print(heaterlist[0].status)
+    # print(heaterlist[0].roomlist[1].status)
 
     if args.raw:
-        print(gateway._status)
+        print(heaterlist[0]._status)
     else:
-        print(gateway.status)
+        print(heaterlist[0].status)
 
     await session.close()
 
-
-# called from CLI?
+# called from CLI? python intouch.py [--raw] hostname/address
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main(loop))
