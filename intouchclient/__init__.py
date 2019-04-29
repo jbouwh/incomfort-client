@@ -11,9 +11,6 @@ import asyncio
 import logging
 
 import aiohttp
-# from http import HTTPStatus
-
-HTTP_OK = 200
 
 INVALID_VALUE = (2**15-1)/100.0
 SERIAL_LINE = '0123456789abcdefghijklmnopqrstuvwxyz'
@@ -42,11 +39,13 @@ DISPLAY_CODES = {
     255: 'buffer'
 }
 
+HTTP_OK = 200  # cheaper than: HTTPStatus.OK
+
 _LOGGER = logging.getLogger(__name__)
 
 
-def _convert(MostSignificantByte, LeastSignificantByte) -> float:
-    _value = (MostSignificantByte * 256 + LeastSignificantByte) / 100.0
+def _convert(most_significant_byte, least_significant_byte) -> float:
+    _value = (most_significant_byte * 256 + least_significant_byte) / 100.0
     return _value if _value is not INVALID_VALUE else None
 
 
@@ -54,31 +53,41 @@ async def _get(session, url):
     _LOGGER.debug("_get(session, url=%s)", url)
 
     async with session.get(url) as response:
-        assert response.status == HTTP_OK  # cheaper than: HTTPStatus.OK
+        assert response.status == HTTP_OK
         return await response.json(content_type=None)
 
 
 class InComfortClient(object):
-    def __init__(self):
-        pass
+    def __init__(self, hostname, session=None, debug=False):
+        if debug is True:
+            _LOGGER.setLevel(logging.DEBUG)
+            _LOGGER.debug("Debug mode is explicitly enabled.")
+        else:
+            _LOGGER.debug("Debug mode is not explicitly enabled "
+                          "(but may be enabled elsewhere).")
+
+        _LOGGER.info("InComfortClient()")
+
+        # TODO: use existing session if one was provided (needs fixing)
+        self._session = session if session else aiohttp.ClientSession()
+
+        self.gateway = InComfortGateway(hostname=hostname)
 
 
-class Gateway(InComfortClient):
-    async def __init__(self, hostname):
+class InComfortGateway(object):
+    def __init__(self, hostname=None):
 
         _LOGGER.debug("__init__(hostname=%s)", hostname)
 
         self._name = hostname
         self._data = None
 
-        await self._get_status()
-
         return None
 
     async def _get_status(self, heater=0):
         """Retrieve the Heater's status from the Gateway.
 
-        GET <ip address>/data.json?heater=<nr>
+        GET http://<ip address>/data.json?heater=<nr>
         """
         _LOGGER.debug("_get_status(heater=%s)", heater)
 
@@ -89,15 +98,24 @@ class Gateway(InComfortClient):
 
         _LOGGER.debug("_get_status(heater=%s) = ", self._data)
 
+    async def update(self):
+        _LOGGER.debug("update()")
+
+        timeout = aiohttp.ClientTimeout(total=10)
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            url = 'http://{0}/data.json?heater=0'.format(self._name)
+            self._data = await _get(session, url)
+
     @property
     def _status(self) -> dict:
         """Return the current state of the heater."""
-        return dict(self._data)
+        _status = dict(self._data)
+        _LOGGER.debug("_status() = %s", _status)
+        return _status
 
     @property
     def status(self) -> dict:
         """Return the current state of the heater."""
-        _LOGGER.debug("status()")
         status = {}
 
         status['display_code'] = self.display_code
@@ -180,17 +198,17 @@ class Gateway(InComfortClient):
     @property
     def serial_no(self) -> str:
         """Return the serial number of the heater."""
-        return \
-            str(self._data['serial_year']) + \
-            str(self._data['serial_month']) + \
-            SERIAL_LINE[self._data['serial_line']] + \
-            str(self._data['serial_sn1']) + \
-            str(self._data['serial_sn2']) + \
-            str(self._data['serial_sn3'])
+        return (str(self._data['serial_year']) +
+                str(self._data['serial_month']) +
+                SERIAL_LINE[self._data['serial_line']] +
+                str(self._data['serial_sn1']) +
+                str(self._data['serial_sn2']) +
+                str(self._data['serial_sn3']))
 
 
 # python intouch.py [--raw] hostname/address
 async def main(loop):
+    import argparse
     _LOGGER.debug("main()")
 
     parser = argparse.ArgumentParser()
@@ -200,21 +218,25 @@ async def main(loop):
     parser.add_argument("-r", "--raw", action='store_true', required=False,
                         help="return the raw data")
 
-#   args = vars(parser.parse_args())
     args = parser.parse_args()
 
-    gateway = Gateway(args.gateway)
+    # TODO: provide a session (needs fixing)
+    session = aiohttp.ClientSession()
+
+    client = InComfortClient(args.gateway, session=session)
+    gateway = client.gateway
+    await gateway.update()
 
     if args.raw:
         print(gateway._status)
     else:
         print(gateway.status)
 
+    await session.close()
+
 
 # called from CLI?
 if __name__ == '__main__':
-    import argparse
-
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main(loop))
     loop.close()

@@ -1,18 +1,26 @@
-from setuptools import setup
+import setuptools
 
-setup(
-	name = 'intouchclient',
-	version = '0.1.0',
-	description = 'Python client for connecting devices via a Lan2RF gateway',
-	url = 'https://github.com/zxdavb/intouch-client/',
-	download_url = 'https://github.com/zxdavb/intouch-client/tarball/0.2.8',
-	author = 'David Bonnes',
-	author_email = 'intouch@xxx.com',
-	license = 'Apache 2',
-	classifiers = [
-		'Development Status :: 3 - Alpha',
-	],
-	keywords = ['intouch'],
-	packages = ['intouchclient'],
-	install_requires = ['aiohttp']
+VERSION = "0.1.0"
+
+with open("README.md", "r") as fh:
+    long_description = fh.read()
+
+setuptools.setup(
+    name="intouch-client",
+    version=VERSION,
+    author="David Bonnes",
+    author_email="zxdavb@gmail.com",
+    description="A aiohttp-based client for Intergas Intouch Lan2RF systems",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    url="https://github.com/zxdavb/intouch-client",
+    download_url = 'https://github.com/zxdavb/intouch-client/archive/VERSION.tar.gz',
+    packages=setuptools.find_packages(),
+    keywords = ['intergas', 'intouch', 'lan2rf'],
+    classifiers=[
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
+        "Development Status :: 4 - Beta",
+    ],
 )
