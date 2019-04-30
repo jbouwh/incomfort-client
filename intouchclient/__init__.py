@@ -114,24 +114,24 @@ class InTouchHeater(InTouchObject):
         """Return the current state of the heater."""
         status = {}
 
-        status['display_code'] = self.display_code
-        status['display_text'] = self.display_text
-        status['fault_code'] = self.fault_code
+        status['display_code'] = self.display_code if self._data else None
+        status['display_text'] = self.display_text if self._data else None
+        status['fault_code'] = self.fault_code if self._data else None
 
-        status['is_burning'] = self.is_burning
-        status['is_failed'] = self.is_failed
-        status['is_pumping'] = self.is_pumping
-        status['is_tapping'] = self.is_tapping
+        status['is_burning'] = self.is_burning if self._data else None
+        status['is_failed'] = self.is_failed if self._data else None
+        status['is_pumping'] = self.is_pumping if self._data else None
+        status['is_tapping'] = self.is_tapping if self._data else None
 
-        status['heater_temp'] = self.heater_temp
-        status['tap_temp'] = self.tap_temp
-        status['pressure'] = self.pressure
+        status['heater_temp'] = self.heater_temp if self._data else None
+        status['tap_temp'] = self.tap_temp if self._data else None
+        status['pressure'] = self.pressure if self._data else None
 
-        status['serial_no'] = self.serial_no
+        status['serial_no'] = self.serial_no if self._data else None
 
-        status['nodenr'] = self._data['nodenr']
-        status['rf_message_rssi'] = self._data['rf_message_rssi']
-        status['rfstatus_cntr'] = self._data['rfstatus_cntr']
+        status['nodenr'] = self._data['nodenr'] if self._data else None
+        status['rf_message_rssi'] = self._data['rf_message_rssi'] if self._data else None
+        status['rfstatus_cntr'] = self._data['rfstatus_cntr'] if self._data else None
 
         _LOGGER.debug("status() = %s", status)
         return status
@@ -208,7 +208,7 @@ class InTouchHeater(InTouchObject):
     @property
     def rooms(self) -> list:
         return [InTouchRoom(r, self) for r in ['1', '2']
-                if True or _convert(
+                if True or _convert(                                             # TODO: remove 'True or'
                     self._data['room_temp_{}_msb'.format(r)],
                     self._data['room_temp_{}_lsb'.format(r)]) is not None]
 
@@ -228,9 +228,9 @@ class InTouchRoom(InTouchObject):
         """Return the current state of the room."""
         status = {}
 
-        status['room_temp'] = self.room_temp
-        status['setpoint'] = self.setpoint
-        status['override'] = self.override
+        status['room_temp'] = self.room_temp  if self._data else None
+        status['setpoint'] = self.setpoint if self._data else None
+        status['override'] = self.override if self._data else None
 
         _LOGGER.debug("status() = %s", status)
         return status
@@ -283,7 +283,7 @@ async def main(loop):
         gateway = InTouchGateway(args.gateway, session=session)
         heaters = await gateway.heaters
 
-        await heaters[0].update()
+        # await heaters[0].update()                                              # TODO: remove #
 
         if args.temp:
             await heaters[0].rooms[0].set_override(args.temp)
