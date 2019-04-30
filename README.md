@@ -13,7 +13,7 @@ Where possible, it uses uses the same methods and properties as **incomfort**, b
 
   - `InTouchHeater` renamed from Heater
     - renamed: `is_burning`, `is_failed`, `is_pumping`, `is_tapping`
-    - removed: `room_temp`, `setpoint`, `setpoint_override`, `set`
+    - moved out: `room_temp`, `setpoint`, `setpoint_override`, `set`
     - new/added: `update`, `status`, `roomlist`
 
   - `InTouchRoom` has been added, and some methods moved in from Heater
