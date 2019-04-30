@@ -1,22 +1,8 @@
 """Python client library for the InterGas InTouch system (via Lan2RF gateway).
 
-   Each Gateway can have multiple InTouch Heaters (Boilers), each Heater can
-   have 1-2 Thermostats.
+   Each Gateway can have up to 8 Heaters (Boilers) and each Heater can have 0-2
+   Room thermostats.
    """
-
-# Based upon: https://github.com/bwesterb/incomfort, and so uses the same
-# methods and properties, where possible.  Note the following differences:
-#   Classes:
-#   - InTouchGateway was Gateway
-#     - added kwargs: username, password (for later versions of firmware)
-#   - InTouchHeater was Heater
-#     - renamed: is_burning, is_failed, is_pumping, is_tapping
-#     - removed: room_temp, setpoint, setpoint_override, set
-#     - added: update, status, roomlist
-#   - InTouchRoom has been added
-#     - same name: room_temp, setpoint
-#     - renamed: setpoint_override, set
-#     - added: status
 
 import asyncio
 import logging
@@ -94,20 +80,18 @@ class InTouchGateway(InTouchObject):
         self._gateway = self
 
         # TODO: how to close session on object destruction if we created one?
-        self._session = session # if session else aiohttp.ClientSession()
+        self._session = session  # if session else aiohttp.ClientSession()
         self._timeout = aiohttp.ClientTimeout(total=10)
         if username is None:
             self._auth = None
         else:
             self._auth = aiohttp.BasicAuth(login=username, password=password)
 
-
     @property
     async def heaters(self) -> list:
-        # {"heaterlist":["1709t023082",null,null,null,null,null,null,null]}
         _LOGGER.debug("InTouchGateway.heaters")
 
-        url = '{0}heaterlist.json'.format(self._hostname)
+        url = '{}heaterlist.json'.format(self._hostname)
         heaters = await self._get(url)
 
         return [InTouchHeater(h, self)
@@ -130,7 +114,7 @@ class InTouchHeater(InTouchObject):
         """
         _LOGGER.debug("update()")
 
-        url = '{0}data.json?heater=0'.format(self._gateway._hostname)
+        url = '{}data.json?heater={}'.format(self._gateway._hostname, 0)
         self._data = await self._get(url)
 
     @property
@@ -226,7 +210,7 @@ class InTouchHeater(InTouchObject):
                 str(self._data['serial_sn3']))
 
     @property
-    def roomlist(self) -> list:
+    def rooms(self) -> list:
         return [InTouchRoom(r, self) for r in ['1', '2']
                 if _convert(
                     self._data['room_temp_{}_msb'.format(r)],
@@ -283,7 +267,7 @@ class InTouchRoom(InTouchObject):
             self.room_no,
             int((min(max(setpoint, 5), 30) - 5.0) * 10))
 
-        response = await self._get(url)
+        await self._get(url)
 
 
 async def main(loop):
@@ -294,8 +278,8 @@ async def main(loop):
 
     parser.add_argument("gateway",
                         help="hostname/address of the InTouch gateway")
-    parser.add_argument("-r", "--raw", action='store_true', required=False,
-                        help="return the raw data")
+    parser.add_argument("-t", "--temp", type=float, required=False,
+                        help="set room[0] temperature (in C, no default)")
 
     args = parser.parse_args()
 
@@ -305,15 +289,16 @@ async def main(loop):
 
         await heaters[0].update()
 
-    if args.raw:
-        print(heaters[0]._data)
-    else:
+        if args.temp:
+            await heaters[0].rooms[0].set_override(args.temp)
+
+    if not args.temp:
         print(heaters[0].status)
-        for room in heaters[0].roomlist:
+        for room in heaters[0].rooms:
             print(room.status)
 
 
-# called from CLI? python intouch.py [--raw] hostname/address
+# called from CLI? python itclient.py <hostname/address> [--temp <int>]
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main(loop))
