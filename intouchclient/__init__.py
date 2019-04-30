@@ -62,22 +62,25 @@ def _convert(most_significant_byte, least_significant_byte) -> float:
     return _value if _value != INVALID_VALUE else None
 
 
-async def _get(url, session):
-    _LOGGER.debug("_get(url=%s)", url)
+class InComfortObject(object):
+    async def _get(self, url):
+        _LOGGER.debug("_get(url=%s)", url)
 
-    async with session.get(
-        url,
-        timeout=aiohttp.ClientTimeout(total=10)
-    ) as response:
-        assert response.status == HTTP_OK
-        response = await response.json(content_type=None)
+        async with self._gateway._session.get(
+            url,
+            timeout=self._gateway._timeout,
+            auth=self._gateway._auth
+        ) as response:
+            assert response.status == HTTP_OK
+            response = await response.json(content_type=None)
 
-    _LOGGER.debug("_get(url=%s): response = %s", url, response)
-    return response
+        _LOGGER.debug("_get(url=%s): response = %s", url, response)
+        return response
 
 
-class InComfortGateway(object):
-    def __init__(self, hostname, session=None, debug=False):
+class InComfortGateway(InComfortObject):
+    def __init__(self, hostname, username=None, password=None, session=None,
+                 debug=False):
         if debug is True:
             _LOGGER.setLevel(logging.DEBUG)
             _LOGGER.debug("Debug mode is explicitly enabled.")
@@ -87,24 +90,31 @@ class InComfortGateway(object):
 
         _LOGGER.info("InComfortGateway.__init__()")
 
-        self._name = hostname
+        self._hostname = 'http://{0}/'.format(hostname)
+        self._gateway = self
 
         # TODO: use existing session if one was provided (needs fixing)
         self._session = session if session else aiohttp.ClientSession()
+        self._timeout = aiohttp.ClientTimeout(total=10)
+        if username is None:
+            self._auth = None
+        else:
+            self._auth = aiohttp.BasicAuth(login=username, password=password)
+
 
     @property
     async def heaters(self) -> list:
         # {"heaterlist":["1709t023082",null,null,null,null,null,null,null]}
         _LOGGER.debug("InComfortGateway.heaters")
 
-        url = 'http://{0}/heaterlist.json'.format(self._name)
-        heaters = await _get(url, self._session)
+        url = '{0}heaterlist.json'.format(self._hostname)
+        heaters = await self._get(url)
 
         return [InComfortHeater(h, self)
                 for h in heaters['heaterlist'] if h]
 
 
-class InComfortHeater(object):
+class InComfortHeater(InComfortObject):
     def __init__(self, serial_no, gateway):
 
         _LOGGER.debug("InComfortHeater.__init__(serial_no=%s)", serial_no)
@@ -120,8 +130,8 @@ class InComfortHeater(object):
         """
         _LOGGER.debug("update()")
 
-        url = 'http://{0}/data.json?heater=0'.format(self._gateway._name)
-        self._data = await _get(url, self._gateway._session)
+        url = '{0}data.json?heater=0'.format(self._gateway._hostname)
+        self._data = await self._get(url)
 
     @property
     def status(self) -> dict:
@@ -223,7 +233,7 @@ class InComfortHeater(object):
                     self._data['room_temp_{}_lsb'.format(r)]) is not None]
 
 
-class InComfortRoom(object):
+class InComfortRoom(InComfortObject):
     def __init__(self, room_no, heater):
         _LOGGER.debug("InComfortRoom.__init__(room_no=%s)", room_no)
 
@@ -267,12 +277,13 @@ class InComfortRoom(object):
             self._data['room_set_ovr_{}_lsb'.format(self.room_no)])
 
     async def set_override(self, setpoint):
-        url = 'http://{}/data.json?heater=0&thermostat={}&setpoint={}'.format(
-            self._gateway._name,
+        url = '{}data.json?heater={}&thermostat={}&setpoint={}'.format(
+            self._gateway._hostname,
+            0,
             self.room_no,
             int((min(max(setpoint, 5), 30) - 5.0) * 10))
 
-        response = await _get(url, self._gateway._session)
+        response = await self._get(url)
 
 
 async def main(loop):
