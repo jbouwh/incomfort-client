@@ -5,14 +5,25 @@
    """
 
 # Based upon: https://github.com/bwesterb/incomfort, and so uses the same
-# methods and properties, where possible.
+# methods and properties, where possible.  Note the following differences:
+#   Classes:
+#   - InComfortGateway was Gateway
+#     - added kwargs: username, password (for later versions of firmware)
+#   - InComfortHeater was Heater
+#     - renamed: is_burning, is_failed, is_pumping, is_tapping
+#     - removed: room_temp, setpoint, setpoint_override, set
+#     - added: update, status, roomlist
+#   - InComfortRoom has been added
+#     - same name: room_temp, setpoint
+#     - renamed: setpoint_override, set
+#     - added: status
 
 import asyncio
 import logging
 
 import aiohttp
 
-INVALID_TEMP = (2**15-1)/100.0
+INVALID_VALUE = (2**15-1)/100.0
 
 SERIAL_LINE = '0123456789abcdefghijklmnopqrstuvwxyz'
 
@@ -47,7 +58,8 @@ _LOGGER = logging.getLogger(__name__)
 
 def _convert(most_significant_byte, least_significant_byte) -> float:
     _value = (most_significant_byte * 256 + least_significant_byte) / 100.0
-    return _value if _value is not INVALID_TEMP else None
+
+    return _value if _value != INVALID_VALUE else None
 
 
 async def _get(url, session):
@@ -60,7 +72,7 @@ async def _get(url, session):
         assert response.status == HTTP_OK
         response = await response.json(content_type=None)
 
-    _LOGGER.warn("_get(url=%s): response = %s", url, response)
+    _LOGGER.debug("_get(url=%s): response = %s", url, response)
     return response
 
 
@@ -81,15 +93,15 @@ class InComfortGateway(object):
         self._session = session if session else aiohttp.ClientSession()
 
     @property
-    async def heaterlist(self) -> list:
+    async def heaters(self) -> list:
         # {"heaterlist":["1709t023082",null,null,null,null,null,null,null]}
-        _LOGGER.debug("InComfortGateway.heaterlist")
+        _LOGGER.debug("InComfortGateway.heaters")
 
         url = 'http://{0}/heaterlist.json'.format(self._name)
-        heaterlist = await _get(url, self._session)
+        heaters = await _get(url, self._session)
 
         return [InComfortHeater(h, self)
-                for h in heaterlist['heaterlist'] if h]
+                for h in heaters['heaterlist'] if h]
 
 
 class InComfortHeater(object):
@@ -123,7 +135,7 @@ class InComfortHeater(object):
         status['is_burning'] = self.is_burning
         status['is_failed'] = self.is_failed
         status['is_pumping'] = self.is_pumping
-        status['is_tap_on'] = self.is_tap_on
+        status['is_tapping'] = self.is_tapping
 
         status['heater_temp'] = self.heater_temp
         status['tap_temp'] = self.tap_temp
@@ -172,7 +184,7 @@ class InComfortHeater(object):
         return bool(self._data['IO'] & BITMASK_PUMP)
 
     @property
-    def is_tap_on(self) -> bool:
+    def is_tapping(self) -> bool:
         return bool(self._data['IO'] & BITMASK_TAP)
 
     @property
@@ -205,17 +217,19 @@ class InComfortHeater(object):
 
     @property
     def roomlist(self) -> list:
-        return [InComfortRoom('1', self, self._gateway),
-                InComfortRoom('2', self, self._gateway)]
+        return [InComfortRoom(r, self) for r in ['1', '2']
+                if _convert(
+                    self._data['room_temp_{}_msb'.format(r)],
+                    self._data['room_temp_{}_lsb'.format(r)]) is not None]
 
 
 class InComfortRoom(object):
-    def __init__(self, room_no, heater, gateway):
+    def __init__(self, room_no, heater):
         _LOGGER.debug("InComfortRoom.__init__(room_no=%s)", room_no)
 
-        self._gateway = gateway
-        self._heater = heater
         self.room_no = room_no
+        self._heater = heater
+        self._gateway = heater._gateway
 
         self._data = heater._data
 
@@ -224,7 +238,7 @@ class InComfortRoom(object):
         """Return the current state of the room."""
         status = {}
 
-        status['temperature'] = self.temperature
+        status['room_temp'] = self.room_temp
         status['setpoint'] = self.setpoint
         status['override'] = self.override
 
@@ -232,7 +246,7 @@ class InComfortRoom(object):
         return status
 
     @property
-    def temperature(self) -> float:
+    def room_temp(self) -> float:
         """Return the current temperature of the room."""
         return _convert(
             self._data['room_temp_{}_msb'.format(self.room_no)],
@@ -268,7 +282,7 @@ async def main(loop):
     parser = argparse.ArgumentParser()
 
     parser.add_argument("gateway",
-                        help="hostname/address of the InComfort gateway")
+                        help="hostname/address of the InTouch gateway")
     parser.add_argument("-r", "--raw", action='store_true', required=False,
                         help="return the raw data")
 
@@ -278,16 +292,18 @@ async def main(loop):
     session = aiohttp.ClientSession()
 
     gateway = InComfortGateway(args.gateway, session=session)
-    heaterlist = await gateway.heaterlist
+    heaters = await gateway.heaters
 
-    await heaterlist[0].update()
-    # print(heaterlist[0].status)
-    # print(heaterlist[0].roomlist[1].status)
+    await heaters[0].update()
+    # print(heaters[0].status)
+    # print(heaters[0].roomlist[0].status)
+    # print(heaters[0].roomlist[1].status)
+    # print(len(heaters[0].roomlist))
 
     if args.raw:
-        print(heaterlist[0]._status)
+        print(heaters[0]._data)
     else:
-        print(heaterlist[0].status)
+        print(heaters[0].status)
 
     await session.close()
 
