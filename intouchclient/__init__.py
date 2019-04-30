@@ -129,6 +129,10 @@ class InTouchHeater(InTouchObject):
 
         status['serial_no'] = self.serial_no
 
+        status['nodenr'] = self._data['nodenr']
+        status['rf_message_rssi'] = self._data['rf_message_rssi']
+        status['rfstatus_cntr'] = self._data['rfstatus_cntr']
+
         _LOGGER.debug("status() = %s", status)
         return status
 
@@ -276,13 +280,15 @@ async def main(loop):
     args = parser.parse_args()
 
     async with aiohttp.ClientSession() as session:
-        gateway = InTouchGateway(args.gateway, session)
+        gateway = InTouchGateway(args.gateway, session=session)
         heaters = await gateway.heaters
 
         await heaters[0].update()
 
         if args.temp:
             await heaters[0].rooms[0].set_override(args.temp)
+
+    # print(heaters[0]._data)
 
     if not args.temp:
         print(heaters[0].status)
