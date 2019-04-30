@@ -65,15 +65,7 @@ class InTouchObject(object):
 
 
 class InTouchGateway(InTouchObject):
-    def __init__(self, hostname, session, username=None, password=None,
-                 debug=False):
-        if debug is True:
-            _LOGGER.setLevel(logging.DEBUG)
-            _LOGGER.debug("Debug mode is explicitly enabled.")
-        else:
-            _LOGGER.debug("Debug mode is not explicitly enabled "
-                          "(but may be enabled elsewhere).")
-
+    def __init__(self, hostname, username=None, password=None, session=None):
         _LOGGER.info("InTouchGateway.__init__()")
 
         self._hostname = 'http://{0}/'.format(hostname)
