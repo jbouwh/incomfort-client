@@ -1,7 +1,23 @@
 # intouch-client
 
-Python client library for **Intergas InTouch-compatible boilers** accesible via a Lan2RF gateway. Includes a CLI. 
+Python client library for **Intergas InTouch-compatible boilers** accesible via a **Lan2RF gateway**. Includes a CLI.
 
-Based upon https://github.com/bwesterb/incomfort, but uses **aiohttp** rather than synchronous I/O (e.g. httplib, requests). 
+### Porting from syncio libraries
+This library is based upon https://github.com/bwesterb/incomfort, but uses **aiohttp** rather than synchronous I/O (such as **requests** or **httplib**).
 
-Support for InComfort thermostats will be added in a future version.
+Where possible, it uses uses the same methods and properties as **incomfort**, but with the following differences:
+
+  Classes:
+  - `InComfortGateway` renamed from Gateway
+    - added kwargs: `username`, `password` (used for later versions of firmware)
+
+  - `InComfortHeater` renamed from Heater
+    - renamed: `is_burning`, `is_failed`, `is_pumping`, `is_tapping`
+    - removed: `room_temp`, `setpoint`, `setpoint_override`, `set`
+    - new/added: `update`, `status`, `roomlist`
+
+  - `InComfortRoom` has been added, and some methods moved in from `InComfortHeater`
+    - same name: `room_temp`, `setpoint`
+    - renamed: `override`, `set_override`
+    - new/added: `status`
+
