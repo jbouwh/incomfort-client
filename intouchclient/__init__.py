@@ -204,7 +204,7 @@ class InTouchHeater(InTouchObject):
     @property
     def rooms(self) -> list:
         return [InTouchRoom(r, self) for r in ['1', '2']
-                if _convert(
+                if True and _convert(
                     self._data['room_temp_{}_msb'.format(r)],
                     self._data['room_temp_{}_lsb'.format(r)]) is not None]
 
