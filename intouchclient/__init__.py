@@ -7,13 +7,13 @@
 # Based upon: https://github.com/bwesterb/incomfort, and so uses the same
 # methods and properties, where possible.  Note the following differences:
 #   Classes:
-#   - InComfortGateway was Gateway
+#   - InTouchGateway was Gateway
 #     - added kwargs: username, password (for later versions of firmware)
-#   - InComfortHeater was Heater
+#   - InTouchHeater was Heater
 #     - renamed: is_burning, is_failed, is_pumping, is_tapping
 #     - removed: room_temp, setpoint, setpoint_override, set
 #     - added: update, status, roomlist
-#   - InComfortRoom has been added
+#   - InTouchRoom has been added
 #     - same name: room_temp, setpoint
 #     - renamed: setpoint_override, set
 #     - added: status
@@ -62,7 +62,7 @@ def _convert(most_significant_byte, least_significant_byte) -> float:
     return _value if _value != INVALID_VALUE else None
 
 
-class InComfortObject(object):
+class InTouchObject(object):
     async def _get(self, url):
         _LOGGER.debug("_get(url=%s)", url)
 
@@ -78,7 +78,7 @@ class InComfortObject(object):
         return response
 
 
-class InComfortGateway(InComfortObject):
+class InTouchGateway(InTouchObject):
     def __init__(self, hostname, session, username=None, password=None,
                  debug=False):
         if debug is True:
@@ -88,7 +88,7 @@ class InComfortGateway(InComfortObject):
             _LOGGER.debug("Debug mode is not explicitly enabled "
                           "(but may be enabled elsewhere).")
 
-        _LOGGER.info("InComfortGateway.__init__()")
+        _LOGGER.info("InTouchGateway.__init__()")
 
         self._hostname = 'http://{0}/'.format(hostname)
         self._gateway = self
@@ -105,19 +105,19 @@ class InComfortGateway(InComfortObject):
     @property
     async def heaters(self) -> list:
         # {"heaterlist":["1709t023082",null,null,null,null,null,null,null]}
-        _LOGGER.debug("InComfortGateway.heaters")
+        _LOGGER.debug("InTouchGateway.heaters")
 
         url = '{0}heaterlist.json'.format(self._hostname)
         heaters = await self._get(url)
 
-        return [InComfortHeater(h, self)
+        return [InTouchHeater(h, self)
                 for h in heaters['heaterlist'] if h]
 
 
-class InComfortHeater(InComfortObject):
+class InTouchHeater(InTouchObject):
     def __init__(self, serial_no, gateway):
 
-        _LOGGER.debug("InComfortHeater.__init__(serial_no=%s)", serial_no)
+        _LOGGER.debug("InTouchHeater.__init__(serial_no=%s)", serial_no)
 
         self._gateway = gateway
         self._serial_no = serial_no
@@ -227,15 +227,15 @@ class InComfortHeater(InComfortObject):
 
     @property
     def roomlist(self) -> list:
-        return [InComfortRoom(r, self) for r in ['1', '2']
+        return [InTouchRoom(r, self) for r in ['1', '2']
                 if _convert(
                     self._data['room_temp_{}_msb'.format(r)],
                     self._data['room_temp_{}_lsb'.format(r)]) is not None]
 
 
-class InComfortRoom(InComfortObject):
+class InTouchRoom(InTouchObject):
     def __init__(self, room_no, heater):
-        _LOGGER.debug("InComfortRoom.__init__(room_no=%s)", room_no)
+        _LOGGER.debug("InTouchRoom.__init__(room_no=%s)", room_no)
 
         self.room_no = room_no
         self._heater = heater
@@ -300,7 +300,7 @@ async def main(loop):
     args = parser.parse_args()
 
     async with aiohttp.ClientSession() as session:
-        gateway = InComfortGateway(args.gateway, session)
+        gateway = InTouchGateway(args.gateway, session)
         heaters = await gateway.heaters
 
         await heaters[0].update()
