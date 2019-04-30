@@ -305,15 +305,12 @@ async def main(loop):
 
         await heaters[0].update()
 
-    # print(heaters[0].status)
-    # print(heaters[0].roomlist[0].status)
-    # print(heaters[0].roomlist[1].status)
-    # print(len(heaters[0].roomlist))
-
     if args.raw:
         print(heaters[0]._data)
     else:
         print(heaters[0].status)
+        for room in heaters[0].roomlist:
+            print(room.status)
 
 
 # called from CLI? python intouch.py [--raw] hostname/address
