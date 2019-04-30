@@ -79,7 +79,7 @@ class InComfortObject(object):
 
 
 class InComfortGateway(InComfortObject):
-    def __init__(self, hostname, username=None, password=None, session=None,
+    def __init__(self, hostname, session, username=None, password=None,
                  debug=False):
         if debug is True:
             _LOGGER.setLevel(logging.DEBUG)
@@ -93,8 +93,8 @@ class InComfortGateway(InComfortObject):
         self._hostname = 'http://{0}/'.format(hostname)
         self._gateway = self
 
-        # TODO: use existing session if one was provided (needs fixing)
-        self._session = session if session else aiohttp.ClientSession()
+        # TODO: how to close session on object destruction if we created one?
+        self._session = session # if session else aiohttp.ClientSession()
         self._timeout = aiohttp.ClientTimeout(total=10)
         if username is None:
             self._auth = None
@@ -299,13 +299,12 @@ async def main(loop):
 
     args = parser.parse_args()
 
-    # TODO: provide a session (needs fixing)
-    session = aiohttp.ClientSession()
+    async with aiohttp.ClientSession() as session:
+        gateway = InComfortGateway(args.gateway, session)
+        heaters = await gateway.heaters
 
-    gateway = InComfortGateway(args.gateway, session=session)
-    heaters = await gateway.heaters
+        await heaters[0].update()
 
-    await heaters[0].update()
     # print(heaters[0].status)
     # print(heaters[0].roomlist[0].status)
     # print(heaters[0].roomlist[1].status)
@@ -316,7 +315,6 @@ async def main(loop):
     else:
         print(heaters[0].status)
 
-    await session.close()
 
 # called from CLI? python intouch.py [--raw] hostname/address
 if __name__ == '__main__':
