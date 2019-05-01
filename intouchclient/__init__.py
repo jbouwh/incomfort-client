@@ -228,7 +228,7 @@ class InTouchRoom(InTouchObject):
         """Return the current state of the room."""
         status = {}
 
-        status['room_temp'] = self.room_temp  if self._data else None
+        status['room_temp'] = self.room_temp if self._data else None
         status['setpoint'] = self.setpoint if self._data else None
         status['override'] = self.override if self._data else None
 
@@ -283,17 +283,18 @@ async def main(loop):
         gateway = InTouchGateway(args.gateway, session=session)
         heaters = await gateway.heaters
 
-        # await heaters[0].update()                                              # TODO: remove #
+        await heaters[0].update()
 
         if args.temp:
             await heaters[0].rooms[0].set_override(args.temp)
 
-    # print(heaters[0]._data)
+    # print(heaters[0]._data)  # raw JSON
 
     if not args.temp:
-        print(heaters[0].status)
+        status = dict(heaters[0].status)
         for room in heaters[0].rooms:
-            print(room.status)
+            status['room_{}'.format(room.room_no)] = room.status
+        print(status)
 
 
 # called from CLI? python itclient.py <hostname/address> [--temp <int>]
