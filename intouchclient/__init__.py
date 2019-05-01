@@ -37,6 +37,11 @@ DISPLAY_CODES = {
     255: 'buffer'
 }
 
+DEFAULT_HEATER_NO = 0
+DEFAULT_ROOM_NO = 0
+OVERRIDE_MAX_TEMP = 30.0
+OVERRIDE_MIN_TEMP = 5.0
+
 HTTP_OK = 200  # cheaper than: HTTPStatus.OK
 
 _LOGGER = logging.getLogger(__name__)
@@ -106,7 +111,8 @@ class InTouchHeater(InTouchObject):
         """
         _LOGGER.debug("update()")
 
-        url = '{}data.json?heater={}'.format(self._gateway._hostname, 0)
+        url = '{}data.json?heater={}'.format(
+            self._gateway._hostname, DEFAULT_HEATER_NO)
         self._data = await self._get(url)
 
     @property
@@ -257,11 +263,16 @@ class InTouchRoom(InTouchObject):
             self._data['room_set_ovr_{}_lsb'.format(self.room_no)])
 
     async def set_override(self, setpoint):
+        _LOGGER.debug("Room(%s).set_override(setpoint=%s)",
+                      self.room_no, setpoint)
+
+        setpoint = min(max(setpoint, OVERRIDE_MIN_TEMP), OVERRIDE_MAX_TEMP)
         url = '{}data.json?heater={}&thermostat={}&setpoint={}'.format(
             self._gateway._hostname,
-            0,
-            self.room_no,
-            int((min(max(setpoint, 5), 30) - 5.0) * 10))
+            DEFAULT_HEATER_NO,
+            int(self.room_no) - 1,
+            int((setpoint - 5) * 10)
+        )
 
         await self._get(url)
 
@@ -275,24 +286,24 @@ async def main(loop):
     parser.add_argument("gateway",
                         help="hostname/address of the InTouch gateway")
     parser.add_argument("-t", "--temp", type=float, required=False,
-                        help="set room[0] temperature (in C, no default)")
+                        help="set room temperature (in C, no default)")
 
     args = parser.parse_args()
 
     async with aiohttp.ClientSession() as session:
         gateway = InTouchGateway(args.gateway, session=session)
-        heaters = await gateway.heaters
+        heater = list(await gateway.heaters)[DEFAULT_HEATER_NO]
 
-        await heaters[0].update()
+        await heater.update()
 
         if args.temp:
-            await heaters[0].rooms[0].set_override(args.temp)
+            await heater.rooms[DEFAULT_ROOM_NO].set_override(args.temp)
 
-    # print(heaters[0]._data)  # raw JSON
+    # print(heater._data)  # raw JSON
 
     if not args.temp:
-        status = dict(heaters[0].status)
-        for room in heaters[0].rooms:
+        status = dict(heater.status)
+        for room in heater.rooms:
             status['room_{}'.format(room.room_no)] = room.status
         print(status)
 
