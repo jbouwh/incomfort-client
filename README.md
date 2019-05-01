@@ -43,7 +43,7 @@ There is a very basic CLI (the output has been formatted here for readability):
   'rf_message_rssi': 38, 
   'rfstatus_cntr': 0, 
   
-  'room_1': {'room_temp': None, 'setpoint': 19.5, 'override': 19.5}, 
+  'room_1': {'room_temp': 26.4, 'setpoint': 19.5, 'override': 19.5}, 
   'room_2': {'room_temp': None, 'setpoint': None, 'override': 19.0}
 }
 ```
