@@ -23,7 +23,7 @@ Where possible, it uses uses the same methods and properties as **incomfort**, b
 ### Basic CLI included
 There is a very basic CLI (the output has been formatted here for readability):
 ```bash
-(venv) root@hostname:~/client_apis/intouch-client$ python intouchclient/__init__.py ${HOSTNAME}
+(venv) root@hostname:~/$ python intouchclient/__init__.py ${HOSTNAME}
 {
   'display_code': 126, 
   'display_text': 'standby', 
