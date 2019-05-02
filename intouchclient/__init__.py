@@ -285,7 +285,9 @@ async def main(loop):
 
     parser.add_argument("gateway",
                         help="hostname/address of the InTouch gateway")
-    parser.add_argument("-t", "--temp", type=float, required=False,
+    parser.add_argument("--raw", action='store_true', required=False,
+                        help="return raw (unformatted) JSON")
+    parser.add_argument("-temp", type=float, required=False,
                         help="set room temperature (in C, no default)")
 
     args = parser.parse_args()
@@ -299,13 +301,14 @@ async def main(loop):
         if args.temp:
             await heater.rooms[DEFAULT_ROOM_NO].set_override(args.temp)
 
-    # print(heater._data)  # raw JSON
+        elif args.raw:
+            print(heater._data)  # raw JSON
 
-    if not args.temp:
-        status = dict(heater.status)
-        for room in heater.rooms:
-            status['room_{}'.format(room.room_no)] = room.status
-        print(status)
+        else:
+            status = dict(heater.status)
+            for room in heater.rooms:
+                status['room_{}'.format(room.room_no)] = room.status
+            print(status)
 
 
 # called from CLI? python itclient.py <hostname/address> [--temp <int>]
