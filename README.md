@@ -2,7 +2,7 @@
 
 # incomfort-client
 
-Python client library for **Intergas boilers** accesible via a **Lan2RF gateway**. It includes a basic CLI to demonstrate how to use the library.  
+Python client library for **Intergas boilers** accesible via a **Lan2RF gateway** by abstracting its HTTP API. It includes a basic CLI to demonstrate how to use the library.  
 
 This library was previously called **intouch-client**, as it is known in the UK as **InTouch**, but in mainland Europe (especially the Netherlands, where is it popular) it is known as **Incomfort**.
 
