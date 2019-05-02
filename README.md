@@ -58,7 +58,7 @@ QA includes comparing JSON from **cURL** with output from this app using **diff*
 curl -X GET http://${HOSTNAME}/data.json?heater=0 | \
     python -c "import sys, json; print(json.load(sys.stdin))" > a.out
     
-python intouchclient/__init__.py ${HOSTNAME} --raw > b.out
+python incomfortclient/__init__.py ${HOSTNAME} --raw > b.out
 
 diff a.out b.out
 ```
