@@ -1,3 +1,5 @@
+[![CircleCI](https://circleci.com/gh/zxdavb/intouch-client.svg?style=svg)](https://circleci.com/gh/zxdavb/intouch-client)
+
 # intouch-client
 
 Python client library for **Intergas InTouch-compatible boilers** accesible via a **Lan2RF gateway**. It includes a basic CLI to demonstrate how to use the library.
