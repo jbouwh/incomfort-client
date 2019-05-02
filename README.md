@@ -58,3 +58,7 @@ curl -X GET http://${HOSTNAME}/data.json?heater=0 | \
     
 python intouchclient/__init__.py ${HOSTNAME} --raw
 ```
+Newer versions of the gateway require authentication:
+```bash
+curl --user ${USER}:${PASS} -X GET http://${HOSTNAME}/protect/data.json?heater=0
+```
