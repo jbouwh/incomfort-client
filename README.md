@@ -51,7 +51,7 @@ There is a very basic CLI (the output has been formatted here for readability):
 ```
 
 ### CircleCI
-QA includes comparing JSON from **cURL** with output from this app using **diff**:
+QA includes comparing JSON from **cURL** with output from this app using **diff** (note the `--raw` switch):
 ```bash
 curl -X GET http://${HOSTNAME}/data.json?heater=0 | \
     python -c "import sys, json; print(json.load(sys.stdin))" > a.out
