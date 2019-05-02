@@ -54,9 +54,11 @@ There is a very basic CLI (the output has been formatted here for readability):
 QA includes comparing JSON from **cURL** with output from this app using **diff**:
 ```bash
 curl -X GET http://${HOSTNAME}/data.json?heater=0 | \
-    python -c "import sys, json; print(json.load(sys.stdin))"
+    python -c "import sys, json; print(json.load(sys.stdin))" > a.out
     
-python intouchclient/__init__.py ${HOSTNAME} --raw
+python intouchclient/__init__.py ${HOSTNAME} --raw > b.out
+
+diff a.out b.out
 ```
 Newer versions of the gateway require authentication:
 ```bash
