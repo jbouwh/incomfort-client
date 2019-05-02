@@ -16,7 +16,7 @@ Where possible, it uses uses the same methods and properties as **incomfort**, b
 
   - `Heater` class
     - renamed: `is_burning`, `is_failed`, `is_pumping`, `is_tapping`
-    - moved out: `room_temp`, `setpoint`, `setpoint_override`, `set`
+    - moved: `room_temp`, `setpoint`, `setpoint_override`, `set` to `Room` class
     - new/added: `update`, `status`, `rooms`
 
   - `Room` class has been added, and some methods moved in from Heater
