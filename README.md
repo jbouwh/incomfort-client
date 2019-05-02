@@ -55,14 +55,14 @@ There is a very basic CLI (the output has been formatted here for readability):
 ### CircleCI
 QA includes comparing JSON from **cURL** with output from this app using **diff** (note the `--raw` switch):
 ```bash
-curl -X GET http://${HOSTNAME}/data.json?heater=0 | \
+(venv) root@hostname:~/$ curl -X GET http://${HOSTNAME}/data.json?heater=0 | \
     python -c "import sys, json; print(json.load(sys.stdin))" > a.out
     
-python incomfortclient/__init__.py ${HOSTNAME} --raw > b.out
+(venv) root@hostname:~/$ python incomfortclient/__init__.py ${HOSTNAME} --raw > b.out
 
-diff a.out b.out
+(venv) root@hostname:~/$ diff a.out b.out
 ```
 Newer versions of the gateway require authentication:
 ```bash
-curl --user ${USER}:${PASS} -X GET http://${HOSTNAME}/protect/data.json?heater=0
+(venv) root@hostname:~/$ curl --user ${USER}:${PASS} -X GET http://${HOSTNAME}/protect/data.json?heater=0
 ```
