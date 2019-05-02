@@ -65,7 +65,6 @@ jobs:
           command: |
             . venv/bin/activate
             python intouchclient/__init__.py cr-router.bonnes.me --raw | \
-              python -c "import sys, json; print(json.load(sys.stdin))" | \
               tee ${TEST_RESULTS}/response_app_raw.json
 
       - run:
