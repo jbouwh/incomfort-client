@@ -9,7 +9,7 @@ This library was previously called **intouch-client**, as it is known in the UK 
 ### Porting from syncio libraries
 This library is based upon https://github.com/bwesterb/incomfort, but uses **aiohttp** rather than synchronous I/O (such as **requests** or **httplib**).
 
-Where possible, it uses uses the same methods and properties as **incomfort**, but with the following differences:
+Where possible, it uses uses the same methods and properties as **bwesterb/incomfort**, but with the following differences:
 
   - `Gateway` class
     - added kwargs: `username`, `password` (used for newer versions of firmware)
