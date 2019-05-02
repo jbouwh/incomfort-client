@@ -1,4 +1,4 @@
-[![CircleCI](https://circleci.com/gh/zxdavb/intouch-client.svg?style=svg)](https://circleci.com/gh/zxdavb/intouch-client)
+[![CircleCI](https://circleci.com/gh/zxdavb/incomfort-client.svg?style=svg)](https://circleci.com/gh/zxdavb/incomfort-client)
 
 # incomfort-client
 
