@@ -64,7 +64,7 @@ jobs:
           no_output_timeout: 30
           command: |
             . venv/bin/activate
-            python intouchclient/__init__.py cr-router.bonnes.me --raw | \
+            python incomfortclient/__init__.py cr-router.bonnes.me --raw | \
               tee ${TEST_RESULTS}/response_app_raw.json
 
       - run:
@@ -80,7 +80,7 @@ jobs:
           no_output_timeout: 30
           command: |
             . venv/bin/activate
-            python intouchclient/__init__.py cr-router.bonnes.me | \
+            python incomfortclient/__init__.py cr-router.bonnes.me | \
               tee ${TEST_RESULTS}/response_app.json
 
       - store_artifacts:
