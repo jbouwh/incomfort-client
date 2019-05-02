@@ -271,7 +271,7 @@ class InTouchRoom(InTouchObject):
             self._gateway._hostname,
             DEFAULT_HEATER_NO,
             int(self.room_no) - 1,
-            int((setpoint - 5) * 10)
+            int((setpoint - OVERRIDE_MIN_TEMP) * 10)
         )
 
         await self._get(url)
