@@ -42,8 +42,6 @@ DEFAULT_ROOM_NO = 0
 OVERRIDE_MAX_TEMP = 30.0
 OVERRIDE_MIN_TEMP = 5.0
 
-HTTP_OK = 200  # cheaper than: HTTPStatus.OK
-
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -59,11 +57,11 @@ class InComfortObject(object):
 
         async with self._gateway._session.get(
             url,
+            auth=self._gateway._auth,
+            raise_for_status=True,
             timeout=self._gateway._timeout,
-            auth=self._gateway._auth
         ) as response:
             _LOGGER.debug("_get(url), response.status=%s", response.status)
-            assert response.status == HTTP_OK
             response = await response.json(content_type=None)
 
         _LOGGER.debug("_get(url=%s): response = %s", url, response)
@@ -290,13 +288,13 @@ async def main(loop):
     credentials_group = parser.add_argument_group(
         "user credentials - used only for newer firmwares")
     credentials_group.add_argument(
-        "--username", type=str, required=False, default=None)
+        "-u", "--username", type=str, required=False, default=None)
     credentials_group.add_argument(
-        "--password", type=str, required=False, default=None)
+        "-p", "--password", type=str, required=False, default=None)
 
-    parser.add_argument("--temp", type=float, required=False,
+    parser.add_argument("-t", "--temp", type=float, required=False,
                         help="set room temperature (in C, no default)")
-    parser.add_argument("--raw", action='store_true', required=False,
+    parser.add_argument("-r", "--raw", action='store_true', required=False,
                                help="return raw JSON, useful for testing")
 
     args = parser.parse_args()
@@ -305,7 +303,8 @@ async def main(loop):
         parser.error('--username and --password must be given together')
 
     async with aiohttp.ClientSession() as session:
-        gateway = Gateway(args.gateway, session=session)
+        gateway = Gateway(args.gateway, session=session,
+                          username=args.username, password=args.password)
         heater = list(await gateway.heaters)[DEFAULT_HEATER_NO]
 
         await heater.update()
