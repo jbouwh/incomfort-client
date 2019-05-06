@@ -9,7 +9,7 @@ import logging
 
 import aiohttp
 
-INVALID_VALUE = (2**15-1)/100.0
+INVALID_VALUE = (2**15-1)/100.0  # 327.67
 
 SERIAL_LINE = '0123456789abcdefghijklmnopqrstuvwxyz'
 
@@ -55,13 +55,14 @@ def _convert(most_significant_byte, least_significant_byte) -> float:
 
 class InComfortObject(object):
     async def _get(self, url):
-        _LOGGER.debug("_get(url=%s)", url)
+        _LOGGER.debug("_get(url=%s, _auth=%s)", url, self._gateway._auth)
 
         async with self._gateway._session.get(
             url,
             timeout=self._gateway._timeout,
             auth=self._gateway._auth
         ) as response:
+            _LOGGER.debug("_get(url), response.status=%s", response.status)
             assert response.status == HTTP_OK
             response = await response.json(content_type=None)
 
@@ -71,24 +72,25 @@ class InComfortObject(object):
 
 class Gateway(InComfortObject):
     def __init__(self, hostname, username=None, password=None, session=None):
-        _LOGGER.info("Gateway.__init__()")
+        _LOGGER.debug("Gateway.__init__(hostname=%s)", hostname)
 
-        self._hostname = 'http://{0}/'.format(hostname)
         self._gateway = self
 
         # TODO: how to close session on object destruction if we created one?
         self._session = session  # if session else aiohttp.ClientSession()
         self._timeout = aiohttp.ClientTimeout(total=10)
         if username is None:
+            self._url_base = 'http://{0}/'.format(hostname)
             self._auth = None
         else:
+            self._url_base = 'http://{0}/protect/'.format(hostname)
             self._auth = aiohttp.BasicAuth(login=username, password=password)
 
     @property
     async def heaters(self) -> list:
         _LOGGER.debug("Gateway.heaters")
 
-        url = '{}heaterlist.json'.format(self._hostname)
+        url = '{}heaterlist.json'.format(self._url_base)
         heaters = await self._get(url)
 
         return [Heater(h, self)
@@ -97,7 +99,6 @@ class Gateway(InComfortObject):
 
 class Heater(InComfortObject):
     def __init__(self, serial_no, gateway):
-
         _LOGGER.debug("Heater.__init__(serial_no=%s)", serial_no)
 
         self._gateway = gateway
@@ -112,7 +113,7 @@ class Heater(InComfortObject):
         _LOGGER.debug("update()")
 
         url = '{}data.json?heater={}'.format(
-            self._gateway._hostname, DEFAULT_HEATER_NO)
+            self._gateway._url_base, DEFAULT_HEATER_NO)
         self._data = await self._get(url)
 
     @property
@@ -214,7 +215,7 @@ class Heater(InComfortObject):
     @property
     def rooms(self) -> list:
         return [Room(r, self) for r in ['1', '2']
-                if True or _convert(                                             # TODO: remove 'True or'
+                if _convert(
                     self._data['room_temp_{}_msb'.format(r)],
                     self._data['room_temp_{}_lsb'.format(r)]) is not None]
 
@@ -268,7 +269,7 @@ class Room(InComfortObject):
 
         setpoint = min(max(setpoint, OVERRIDE_MIN_TEMP), OVERRIDE_MAX_TEMP)
         url = '{}data.json?heater={}&thermostat={}&setpoint={}'.format(
-            self._gateway._hostname,
+            self._gateway._url_base,
             DEFAULT_HEATER_NO,
             int(self.room_no) - 1,
             int((setpoint - OVERRIDE_MIN_TEMP) * 10)
@@ -285,12 +286,23 @@ async def main(loop):
 
     parser.add_argument("gateway",
                         help="hostname/address of the InComfort gateway")
-    parser.add_argument("--raw", action='store_true', required=False,
-                        help="return raw (unformatted) JSON")
-    parser.add_argument("-temp", type=float, required=False,
+
+    credentials_group = parser.add_argument_group(
+        "user credentials - used only for newer firmwares")
+    credentials_group.add_argument(
+        "--username", type=str, required=False, default=None)
+    credentials_group.add_argument(
+        "--password", type=str, required=False, default=None)
+
+    parser.add_argument("--temp", type=float, required=False,
                         help="set room temperature (in C, no default)")
+    parser.add_argument("--raw", action='store_true', required=False,
+                               help="return raw JSON, useful for testing")
 
     args = parser.parse_args()
+
+    if bool(args.username) ^ bool(args.password):
+        parser.error('--username and --password must be given together')
 
     async with aiohttp.ClientSession() as session:
         gateway = Gateway(args.gateway, session=session)
