@@ -44,6 +44,7 @@ OVERRIDE_MIN_TEMP = 5.0
 
 _LOGGER = logging.getLogger(__name__)
 
+# pylint: disable=protected-access, fixme, missing-docstring
 
 def _value(key_stub: str, data_dict: dict) -> float:
     def _convert(most_significant_byte: int,
@@ -56,6 +57,11 @@ def _value(key_stub: str, data_dict: dict) -> float:
 
 
 class InComfortObject(object):
+    """Base for InComfortObjects."""
+
+    def __init__(self):
+        self._gateway = None
+
     async def _get(self, url: str):
         _LOGGER.debug("_get(url=%s, _auth=%s)", url, self._gateway._auth)
 
@@ -73,9 +79,12 @@ class InComfortObject(object):
 
 
 class Gateway(InComfortObject):
+    """Representation of an InComfort Gateway."""
+
     def __init__(self, hostname: str, username: str = None,
                  password: str = None, session: aiohttp.ClientSession = None):
         _LOGGER.debug("Gateway.__init__(hostname=%s)", hostname)
+        super().__init__()
 
         self._gateway = self
 
@@ -101,8 +110,11 @@ class Gateway(InComfortObject):
 
 
 class Heater(InComfortObject):
+    """Representation of an InComfort Heater."""
+
     def __init__(self, serial_no: str, gateway: Gateway):
         _LOGGER.debug("Heater.__init__(serial_no=%s)", serial_no)
+        super().__init__()
 
         self._gateway = gateway
         self._serial_no = serial_no
@@ -215,12 +227,15 @@ class Heater(InComfortObject):
     @property
     def rooms(self) -> list:
         return [Room(r, self) for r in ['1', '2']
-            if _value('room_temp_{}'.format(r), self._data) is not None]
+                if _value('room_temp_{}'.format(r), self._data) is not None]
 
 
 class Room(InComfortObject):
+    """Representation of an InComfort Room."""
+
     def __init__(self, room_no: int, heater: Heater):
         _LOGGER.debug("Room.__init__(room_no=%s)", room_no)
+        super().__init__()
 
         self.room_no = room_no
         self._heater = heater
@@ -266,7 +281,6 @@ class Room(InComfortObject):
             int(self.room_no) - 1,
             int((setpoint - OVERRIDE_MIN_TEMP) * 10)
         )
-
         await self._get(url)
 
 
@@ -289,7 +303,7 @@ async def main(loop):
     parser.add_argument("-t", "--temp", type=float, required=False,
                         help="set room temperature (in C, no default)")
     parser.add_argument("-r", "--raw", action='store_true', required=False,
-                               help="return raw JSON, useful for testing")
+                        help="return raw JSON, useful for testing")
 
     args = parser.parse_args()
 
@@ -300,12 +314,21 @@ async def main(loop):
     async with aiohttp.ClientSession() as session:
         gateway = Gateway(args.gateway, session=session,
                           username=args.username, password=args.password)
-        heater = list(await gateway.heaters)[DEFAULT_HEATER_NO]
+        try:
+            heater = list(await gateway.heaters)[DEFAULT_HEATER_NO]
+        except aiohttp.client_exceptions.ClientResponseError:
+            _LOGGER.error("ClientResponseError Hint: Bad user credentials")
+            raise
 
         await heater.update()
 
         if args.temp:
-            await heater.rooms[DEFAULT_ROOM_NO].set_override(args.temp)
+            try:
+                await heater.rooms[DEFAULT_ROOM_NO].set_override(args.temp)
+            except IndexError:
+                _LOGGER.error(
+                    "IndexError Hint: There is no valid room thermostat")
+                raise
 
         elif args.raw:
             print(heater._data)  # raw JSON
