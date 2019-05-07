@@ -45,14 +45,18 @@ OVERRIDE_MIN_TEMP = 5.0
 _LOGGER = logging.getLogger(__name__)
 
 
-def _convert(most_significant_byte, least_significant_byte) -> float:
-    _value = (most_significant_byte * 256 + least_significant_byte) / 100.0
+def _value(key_stub: str, data_dict) -> float:
+    def _convert(most_significant_byte: int,
+                 least_significant_byte: int) -> float:
+        return (most_significant_byte * 256 + least_significant_byte) / 100.0
 
+    _value = _convert(data_dict[key_stub + '_msb'],
+                      data_dict[key_stub + '_lsb'])
     return _value if _value != INVALID_VALUE else None
 
 
 class InComfortObject(object):
-    async def _get(self, url):
+    async def _get(self, url: str):
         _LOGGER.debug("_get(url=%s, _auth=%s)", url, self._gateway._auth)
 
         async with self._gateway._session.get(
@@ -69,7 +73,7 @@ class InComfortObject(object):
 
 
 class Gateway(InComfortObject):
-    def __init__(self, hostname, username=None, password=None, session=None):
+    def __init__(self, hostname: str, username=None, password=None, session=None):
         _LOGGER.debug("Gateway.__init__(hostname=%s)", hostname)
 
         self._gateway = self
@@ -96,7 +100,7 @@ class Gateway(InComfortObject):
 
 
 class Heater(InComfortObject):
-    def __init__(self, serial_no, gateway):
+    def __init__(self, serial_no: str, gateway: Gateway):
         _LOGGER.debug("Heater.__init__(serial_no=%s)", serial_no)
 
         self._gateway = gateway
@@ -185,20 +189,17 @@ class Heater(InComfortObject):
     @property
     def heater_temp(self) -> float:
         """Return the supply temperature of the CV (circulating volume)."""
-        return _convert(self._data['ch_temp_msb'],
-                        self._data['ch_temp_lsb'])
+        return _value('ch_temp', self._data)
 
     @property
     def tap_temp(self) -> float:
         """Return the current temperature of the HW (hot water)."""
-        return _convert(self._data['tap_temp_msb'],
-                        self._data['tap_temp_lsb'])
+        return _value('tap_temp', self._data)
 
     @property
     def pressure(self) -> float:
         """Return the water pressure of the CH (central heating)."""
-        return _convert(self._data['ch_pressure_msb'],
-                        self._data['ch_pressure_lsb'])
+        return _value('ch_pressure', self._data)
 
     @property
     def serial_no(self) -> str:
@@ -213,13 +214,11 @@ class Heater(InComfortObject):
     @property
     def rooms(self) -> list:
         return [Room(r, self) for r in ['1', '2']
-                if _convert(
-                    self._data['room_temp_{}_msb'.format(r)],
-                    self._data['room_temp_{}_lsb'.format(r)]) is not None]
+            if _value('room_temp_{}'.format(r), self._data) is not None]
 
 
 class Room(InComfortObject):
-    def __init__(self, room_no, heater):
+    def __init__(self, room_no: int, heater: Heater):
         _LOGGER.debug("Room.__init__(room_no=%s)", room_no)
 
         self.room_no = room_no
@@ -243,25 +242,19 @@ class Room(InComfortObject):
     @property
     def room_temp(self) -> float:
         """Return the current temperature of the room."""
-        return _convert(
-            self._data['room_temp_{}_msb'.format(self.room_no)],
-            self._data['room_temp_{}_lsb'.format(self.room_no)])
+        return _value('room_temp_{}'.format(self.room_no), self._data)
 
     @property
     def setpoint(self) -> float:
         """Return the (scheduled?) setpoint temperature of the room."""
-        return _convert(
-            self._data['room_temp_set_{}_msb'.format(self.room_no)],
-            self._data['room_temp_set_{}_lsb'.format(self.room_no)])
+        return _value('room_temp_set{}'.format(self.room_no), self._data)
 
     @property
     def override(self) -> float:
         """Return the override setpoint temperature of the room."""
-        return _convert(
-            self._data['room_set_ovr_{}_msb'.format(self.room_no)],
-            self._data['room_set_ovr_{}_lsb'.format(self.room_no)])
+        return _value('room_temp_ovr{}'.format(self.room_no), self._data)
 
-    async def set_override(self, setpoint):
+    async def set_override(self, setpoint: float):
         _LOGGER.debug("Room(%s).set_override(setpoint=%s)",
                       self.room_no, setpoint)
 
