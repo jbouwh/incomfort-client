@@ -6,6 +6,8 @@ Python client library for **Intergas boilers** accesible via a **Lan2RF gateway*
 
 This library was previously called **intouch-client**, as it is known in the UK as **InTouch**, but in mainland Europe (especially the Netherlands, where is it popular) it is known as **Incomfort**.
 
+It is written for Python v3.6.7.
+
 ### Porting from syncio libraries
 This library is based upon https://github.com/bwesterb/incomfort, but uses **aiohttp** rather than synchronous I/O (such as **requests** or **httplib**).
 
@@ -25,7 +27,7 @@ Where possible, it uses uses the same methods and properties as **bwesterb/incom
     - new/added: `status`
 
 ### Basic CLI included
-There is a very basic CLI (the output has been formatted here for readability):
+There is a very basic CLI (this output has been formatted for readability):
 ```bash
 (venv) root@hostname:~/$ python incomfortclient/__init__.py ${HOSTNAME}
 {
@@ -64,5 +66,7 @@ QA includes comparing JSON from **cURL** with output from this app using **diff*
 ```
 Newer versions of the gateway require authentication:
 ```bash
+(venv) root@hostname:~/$ python incomfortclient/__init__.py ${HOSTNAME} -u ${USER} -p ${PASS}
+   ...
 (venv) root@hostname:~/$ curl --user ${USER}:${PASS} -X GET http://${HOSTNAME}/protect/data.json?heater=0
 ```
