@@ -45,7 +45,7 @@ OVERRIDE_MIN_TEMP = 5.0
 _LOGGER = logging.getLogger(__name__)
 
 
-def _value(key_stub: str, data_dict) -> float:
+def _value(key_stub: str, data_dict: dict) -> float:
     def _convert(most_significant_byte: int,
                  least_significant_byte: int) -> float:
         return (most_significant_byte * 256 + least_significant_byte) / 100.0
@@ -73,7 +73,8 @@ class InComfortObject(object):
 
 
 class Gateway(InComfortObject):
-    def __init__(self, hostname: str, username=None, password=None, session=None):
+    def __init__(self, hostname: str, username: str = None,
+                 password: str = None, session: aiohttp.ClientSession = None):
         _LOGGER.debug("Gateway.__init__(hostname=%s)", hostname)
 
         self._gateway = self
@@ -254,7 +255,7 @@ class Room(InComfortObject):
         """Return the override setpoint temperature of the room."""
         return _value('room_temp_ovr{}'.format(self.room_no), self._data)
 
-    async def set_override(self, setpoint: float):
+    async def set_override(self, setpoint: float) -> None:
         _LOGGER.debug("Room(%s).set_override(setpoint=%s)",
                       self.room_no, setpoint)
 
@@ -293,7 +294,8 @@ async def main(loop):
     args = parser.parse_args()
 
     if bool(args.username) ^ bool(args.password):
-        parser.error('--username and --password must be given together')
+        parser.error("--username and --password must be given together, "
+                     "or not at all")
 
     async with aiohttp.ClientSession() as session:
         gateway = Gateway(args.gateway, session=session,
