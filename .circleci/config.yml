@@ -72,7 +72,7 @@ jobs:
           no_output_timeout: 30
           command: |
             . venv/bin/activate
-            sed '/^ *if _value/  s/is not None/== 99/' incomfortclient/__init__.py | ${TEST_RESULTS}/__init__.py
+            sed '/^ *if _value/  s/is not None/== 99/' incomfortclient/__init__.py > ${TEST_RESULTS}/__init__.py
             python ${TEST_RESULTS}/__init__.py cr-router.bonnes.me | tee -a ${TEST_RESULTS}/response_app_rooms.json
 
       - run:
