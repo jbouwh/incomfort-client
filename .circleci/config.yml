@@ -76,20 +76,20 @@ jobs:
               tee ${TEST_RESULTS}/response_app_raw.json
 
       - run:
-          name: cURL response
+          name: cURL response (raw)
           no_output_timeout: 30
           command: |
             curl -X GET http://cr-router.bonnes.me/data.json?heater=0 | \
               python -c "import sys, json; print(json.load(sys.stdin))" | \
-              tee ${TEST_RESULTS}/response_curl.json
+              tee ${TEST_RESULTS}/response_curl_raw.json
 
       - run:
           name: Compare cURL vs App
           no_output_timeout: 30
           command: |
-            echo diff -s ${TEST_RESULTS}/response_curl.json ${TEST_RESULTS}/response_app_raw.json | tee -a ${TEST_RESULTS}/test-results.txt
-                 diff -s ${TEST_RESULTS}/response_curl.json ${TEST_RESULTS}/response_app_raw.json | tee -a ${TEST_RESULTS}/test-results.txt
-            echo                                                                                  | tee -a ${TEST_RESULTS}/test-results.txt
+            echo diff -s ${TEST_RESULTS}/response_curl_raw.json ${TEST_RESULTS}/response_app_raw.json | tee -a ${TEST_RESULTS}/test-results.txt
+                 diff -s ${TEST_RESULTS}/response_curl_raw.json ${TEST_RESULTS}/response_app_raw.json | tee -a ${TEST_RESULTS}/test-results.txt
+            echo                                                                                      | tee -a ${TEST_RESULTS}/test-results.txt
 
       - store_artifacts:
           path: /tmp/test-results
