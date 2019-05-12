@@ -56,7 +56,7 @@ jobs:
           no_output_timeout: 30
           command: |
             . venv/bin/activate
-            python incomfortclient/__init__.py cr-router.bonnes.me | \
+            python incomfortclient/__init__.py ${GATEWAY} | \
               tee ${TEST_RESULTS}/response_app.json
 
       - run:
@@ -65,21 +65,21 @@ jobs:
           command: |
             . venv/bin/activate
             sed '/^ *if _value/  s/is not None/!= 99/' incomfortclient/__init__.py > ${TEST_RESULTS}/__init__.py
-            python ${TEST_RESULTS}/__init__.py cr-router.bonnes.me | tee -a ${TEST_RESULTS}/response_app_rooms.json
+            python ${TEST_RESULTS}/__init__.py ${GATEWAY} | tee -a ${TEST_RESULTS}/response_app_rooms.json
 
       - run:
           name: App response (raw)
           no_output_timeout: 30
           command: |
             . venv/bin/activate
-            python incomfortclient/__init__.py cr-router.bonnes.me --raw | \
+            python incomfortclient/__init__.py ${GATEWAY} --raw | \
               tee ${TEST_RESULTS}/response_app_raw.json
 
       - run:
           name: cURL response (raw)
           no_output_timeout: 30
           command: |
-            curl -X GET http://cr-router.bonnes.me/data.json?heater=0 | \
+            curl -X GET http://${GATEWAY}/data.json?heater=0 | \
               python -c "import sys, json; print(json.load(sys.stdin))" | \
               tee ${TEST_RESULTS}/response_curl_raw.json
 
