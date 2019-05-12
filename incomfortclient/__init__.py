@@ -226,8 +226,8 @@ class Heater(InComfortObject):
 
     @property
     def rooms(self) -> list:
-        return [Room(r, self) for r in ['1', '2']]
-#               if _value('room_temp_{}'.format(r), self._data) is not None]
+        return [Room(r, self) for r in ['1', '2']
+                if _value('room_temp_{}'.format(r), self._data) is not None]
 
 
 class Room(InComfortObject):
