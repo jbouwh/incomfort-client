@@ -226,8 +226,8 @@ class Heater(InComfortObject):
 
     @property
     def rooms(self) -> list:
-        return [Room(r, self) for r in ['1', '2']
-                if _value('room_temp_{}'.format(r), self._data) is not None]
+        return [Room(r, self) for r in ['1', '2']]
+#               if _value('room_temp_{}'.format(r), self._data) is not None]
 
 
 class Room(InComfortObject):
@@ -263,12 +263,12 @@ class Room(InComfortObject):
     @property
     def setpoint(self) -> float:
         """Return the (scheduled?) setpoint temperature of the room."""
-        return _value('room_temp_set{}'.format(self.room_no), self._data)
+        return _value('room_temp_set_{}'.format(self.room_no), self._data)
 
     @property
     def override(self) -> float:
         """Return the override setpoint temperature of the room."""
-        return _value('room_temp_ovr{}'.format(self.room_no), self._data)
+        return _value('room_set_ovr_{}'.format(self.room_no), self._data)
 
     async def set_override(self, setpoint: float) -> None:
         _LOGGER.debug("Room(%s).set_override(setpoint=%s)",
