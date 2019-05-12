@@ -2,7 +2,7 @@
 
 # incomfort-client
 
-Python client library for **Intergas boilers** accesible via a **Lan2RF gateway** by abstracting its HTTP API. It includes a basic CLI to demonstrate how to use the library.  
+Python client library for **Intergas boilers** accesible via a **Lan2RF gateway** by abstracting its HTTP API. It includes a basic CLI to demonstrate how to use the library.  It is available as a [PyPi package](https://pypi.org/project/incomfort-client/).
 
 This library was previously called **intouch-client**, as it is known in the UK as **InTouch**, but in mainland Europe (especially the Netherlands, where is it popular) it is known as **Incomfort**.
 
@@ -13,15 +13,15 @@ This library is based upon https://github.com/bwesterb/incomfort, but uses **aio
 
 Where possible, it uses uses the same methods and properties as **bwesterb/incomfort**, but with the following differences:
 
-  - `Gateway` class
+  - **`Gateway`** class
     - added kwargs: `username`, `password` (used for newer versions of firmware)
 
-  - `Heater` class
+  - **`Heater`** class
     - renamed: `is_burning`, `is_failed`, `is_pumping`, `is_tapping`
-    - moved: `room_temp`, `setpoint`, `setpoint_override`, `set` to `Room` class
+    - moved: `room_temp`, `setpoint`, `setpoint_override`, `set` to **`Room`** class
     - new/added: `update`, `status`, `rooms`
 
-  - `Room` class has been added, and some methods moved in from Heater
+  - **`Room`** class has been added, and some methods moved in from **`Heater`**
     - same name: `room_temp`, `setpoint`
     - renamed: `override`, `set_override`
     - new/added: `status`
