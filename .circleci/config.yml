@@ -84,7 +84,7 @@ jobs:
               tee ${TEST_RESULTS}/response_curl_raw.json
 
       - run:
-          name: Compare cURL vs App
+          name: Compare cURL vs App (raw)
           no_output_timeout: 30
           command: |
             echo diff -s ${TEST_RESULTS}/response_curl_raw.json ${TEST_RESULTS}/response_app_raw.json | tee -a ${TEST_RESULTS}/test-results.txt
