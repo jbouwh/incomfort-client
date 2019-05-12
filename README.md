@@ -67,6 +67,6 @@ QA includes comparing JSON from **cURL** with output from this app using **diff*
 Newer versions of the gateway require authentication:
 ```bash
 (venv) root@hostname:~/$ python incomfortclient/__init__.py ${HOSTNAME} -u ${USER} -p ${PASS}
-   ...
+
 (venv) root@hostname:~/$ curl --user ${USER}:${PASS} -X GET http://${HOSTNAME}/protect/data.json?heater=0
 ```
