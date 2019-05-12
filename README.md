@@ -2,11 +2,11 @@
 
 # incomfort-client
 
-Python client library for **Intergas boilers** accesible via a **Lan2RF gateway** by abstracting its HTTP API. It includes a basic CLI to demonstrate how to use the library.  It is available as a [PyPi package](https://pypi.org/project/incomfort-client/).
+Python client library for **Intergas boilers** accesible via a **Lan2RF gateway** by abstracting its HTTP API. It includes a basic CLI to demonstrate how to use the library.  
 
 This library was previously called **intouch-client**, as it is known in the UK as **InTouch**, but in mainland Europe (especially the Netherlands, where is it popular) it is known as **Incomfort**.
 
-It is written for Python v3.6.7.
+It is written for Python v3.6.7. It is available as a [PyPi package](https://pypi.org/project/incomfort-client/).
 
 ### Porting from syncio libraries
 This library is based upon https://github.com/bwesterb/incomfort, but uses **aiohttp** rather than synchronous I/O (such as **requests** or **httplib**).
