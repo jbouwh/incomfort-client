@@ -6,6 +6,7 @@
 
 import asyncio
 import logging
+import random
 
 import aiohttp
 
@@ -74,6 +75,11 @@ class InComfortObject(object):
             _LOGGER.debug("_get(url), response.status=%s", response.status)
             response = await response.json(content_type=None)
 
+        # if 'room_temp_1_msb' in response:  # TODO: testing only
+        #     temp = 5 + random.randint(0, 9)
+        #     response.update({'room_temp_1_msb': temp})
+        #     _LOGGER.warn("_get(): room_temp_1 = %s", (temp * 256 + 255) / 100)
+
         _LOGGER.debug("_get(url=%s): response = %s", url, response)
         return response
 
@@ -87,10 +93,11 @@ class Gateway(InComfortObject):
         super().__init__()
 
         self._gateway = self
+        self._heaters = None
 
         # TODO: how to close session on object destruction if we created one?
         self._session = session  # if session else aiohttp.ClientSession()
-        self._timeout = aiohttp.ClientTimeout(total=10)
+        self._timeout = aiohttp.ClientTimeout(total=30)
         if username is None:
             self._url_base = 'http://{0}/'.format(hostname)
             self._auth = None
@@ -102,11 +109,12 @@ class Gateway(InComfortObject):
     async def heaters(self) -> list:
         _LOGGER.debug("Gateway.heaters")
 
-        url = '{}heaterlist.json'.format(self._url_base)
-        heaters = await self._get(url)
+        if self._heaters is None:
+            url = '{}heaterlist.json'.format(self._url_base)
+            heaters = await self._get(url)
+            self._heaters = [Heater(h, self) for h in heaters['heaterlist'] if h]
 
-        return [Heater(h, self)
-                for h in heaters['heaterlist'] if h]
+        return self._heaters
 
 
 class Heater(InComfortObject):
@@ -117,19 +125,24 @@ class Heater(InComfortObject):
         super().__init__()
 
         self._gateway = gateway
+        self._rooms = None
+
+        self._data = {}
         self._serial_no = serial_no
-        self._data = None
 
     async def update(self):
         """Retrieve the Heater's status from the Gateway.
 
         GET http://<ip address>/data.json?heater=<nr>
         """
-        _LOGGER.debug("update()")
+        _LOGGER.debug("Heater.update()")
 
         url = '{}data.json?heater={}'.format(
             self._gateway._url_base, DEFAULT_HEATER_NO)
+
         self._data = await self._get(url)
+        for room in self.rooms:
+            room._data = self._data
 
     @property
     def status(self) -> dict:
@@ -159,6 +172,14 @@ class Heater(InComfortObject):
         return status
 
     @property
+    def display_code(self) -> int:
+        """Return the display code, displ_code.
+
+        If the heater is in a failed state, this will be the fault_code.
+        """
+        return self._data['displ_code']
+
+    @property
     def display_text(self) -> str:
         """Return the display code as a string rather than a number.
 
@@ -169,14 +190,6 @@ class Heater(InComfortObject):
             _code,
             "unknown/other, code = {0} (fault code?)".format(_code)
         )
-
-    @property
-    def display_code(self) -> int:
-        """Return the display code, displ_code.
-
-        If the heater is in a failed state, this will be the fault_code.
-        """
-        return self._data['displ_code']
 
     @property
     def fault_code(self) -> int:
@@ -226,8 +239,11 @@ class Heater(InComfortObject):
 
     @property
     def rooms(self) -> list:
-        return [Room(r, self) for r in ['1', '2']
-                if _value('room_temp_{}'.format(r), self._data) is not None]
+        if self._rooms is None:
+            self._rooms = [Room(r, self) for r in ['1', '2']
+                           if _value('room_temp_{}'.format(r), self._data) is not None]
+
+        return self._rooms
 
 
 class Room(InComfortObject):
@@ -237,11 +253,11 @@ class Room(InComfortObject):
         _LOGGER.debug("Room.__init__(room_no=%s)", room_no)
         super().__init__()
 
-        self.room_no = room_no
-        self._heater = heater
         self._gateway = heater._gateway
+        self._heater = heater
+        self._data = {}
 
-        self._data = heater._data
+        self.room_no = room_no
 
     @property
     def status(self) -> dict:
