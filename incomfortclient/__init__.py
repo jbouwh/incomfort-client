@@ -6,7 +6,7 @@
 
 import asyncio
 import logging
-import random
+# import random
 
 import aiohttp
 
@@ -97,7 +97,7 @@ class Gateway(InComfortObject):
 
         # TODO: how to close session on object destruction if we created one?
         self._session = session  # if session else aiohttp.ClientSession()
-        self._timeout = aiohttp.ClientTimeout(total=30)
+        self._timeout = aiohttp.ClientTimeout(total=20)
         if username is None:
             self._url_base = 'http://{0}/'.format(hostname)
             self._auth = None
