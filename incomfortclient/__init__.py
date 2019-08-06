@@ -6,7 +6,7 @@
 
 import asyncio
 import logging
-# import random
+import random
 
 import aiohttp
 
@@ -75,10 +75,10 @@ class InComfortObject(object):
             _LOGGER.debug("_get(url), response.status=%s", response.status)
             response = await response.json(content_type=None)
 
-        # if 'room_temp_1_msb' in response:  # TODO: testing only
-        #     temp = 5 + random.randint(0, 9)
-        #     response.update({'room_temp_1_msb': temp})
-        #     _LOGGER.warn("_get(): room_temp_1 = %s", (temp * 256 + 255) / 100)
+        if 'room_temp_1_msb' in response and self._fake_room:  # TODO: testing only
+            temp = 5 + random.randint(0, 9)
+            response.update({'room_temp_1_msb': temp})
+            _LOGGER.warn("_get(): room_temp_1 = %s", (temp * 256 + 255) / 100)
 
         _LOGGER.debug("_get(url=%s): response = %s", url, response)
         return response
@@ -127,8 +127,20 @@ class Heater(InComfortObject):
         self._gateway = gateway
         self._rooms = None
 
+        self._fake_room = True
+
         self._data = {}
         self._serial_no = serial_no
+
+    @property
+    def fake_room(self) -> int:
+        return self._fake_room
+
+    @fake_room.setter
+    def fake_room(self, value):
+        self._fake_room = value
+        if self._fake_room:
+            _LOGGER.info("Heater(%s): Fake room mode is enabled",  self._serial_no)
 
     async def update(self):
         """Retrieve the Heater's status from the Gateway.
