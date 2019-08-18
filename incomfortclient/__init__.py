@@ -140,7 +140,7 @@ class Heater(InComfortObject):
     def fake_room(self, value):
         self._fake_room = value
         if self._fake_room:
-            _LOGGER.info("Heater(%s): Fake room mode is enabled",  self._serial_no)
+            _LOGGER.info("Heater(%s): Fake room mode is enabled", self._serial_no)
 
     async def update(self):
         """Retrieve the Heater's status from the Gateway.
