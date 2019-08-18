@@ -1,3 +1,7 @@
+# DEPRECATED
+
+This package has been deprecated in favour of [incomfort-client](https://pypi.org/project/incomfort-client/)
+
 # intouch-client
 
 Python client library for **Intergas InTouch-compatible boilers** accesible via a **Lan2RF gateway**. It includes a basic CLI to demonstrate how to use the library.
@@ -25,25 +29,25 @@ There is a very basic CLI (the output has been formatted here for readability):
 ```bash
 (venv) root@hostname:~/client_apis/intouch-client$ python intouchclient/__init__.py ${HOSTNAME}
 {
-  'display_code': 126, 
-  'display_text': 'standby', 
-  'fault_code': 0, 
-  
-  'is_burning': False, 
+  'display_code': 126,
+  'display_text': 'standby',
+  'fault_code': 0,
+
+  'is_burning': False,
   'is_failed': False,
-  'is_pumping': False, 
-  'is_tapping': False, 
-  
-  'heater_temp': 31.22, 
-  'tap_temp': 27.91, 
-  'pressure': 1.23, 
-  'serial_no': '175t23072', 
-  
-  'nodenr': 200, 
-  'rf_message_rssi': 38, 
-  'rfstatus_cntr': 0, 
-  
-  'room_1': {'room_temp': 26.4, 'setpoint': 19.5, 'override': 19.5}, 
+  'is_pumping': False,
+  'is_tapping': False,
+
+  'heater_temp': 31.22,
+  'tap_temp': 27.91,
+  'pressure': 1.23,
+  'serial_no': '175t23072',
+
+  'nodenr': 200,
+  'rf_message_rssi': 38,
+  'rfstatus_cntr': 0,
+
+  'room_1': {'room_temp': 26.4, 'setpoint': 19.5, 'override': 19.5},
   'room_2': {'room_temp': None, 'setpoint': None, 'override': 19.0}
 }
 ```
