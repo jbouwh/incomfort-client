@@ -38,6 +38,20 @@ DISPLAY_CODES = {
     255: "buffer",
 }
 
+HEATER_ATTRS = [
+    "display_code",
+    "display_text",
+    "fault_code",
+    "is_burning",
+    "is_failed",
+    "is_pumping",
+    "is_tapping",
+    "heater_temp",
+    "tap_temp",
+    "pressure",
+    "serial_no",
+]
+
 DEFAULT_HEATER_NO = 0
 DEFAULT_ROOM_NO = 0
 OVERRIDE_MAX_TEMP = 30.0
@@ -64,7 +78,7 @@ class InComfortObject:
         self._fake_room = None
 
     async def _get(self, url: str):
-        _LOGGER.debug("_get(url=%s, _auth=%s)", url, self._gateway._auth)
+        _LOGGER.warn("_get(url=%s, _auth=%s)", url, self._gateway._auth)
 
         async with self._gateway._session.get(
             url,
@@ -72,7 +86,7 @@ class InComfortObject:
             raise_for_status=True,
             timeout=self._gateway._timeout,
         ) as resp:
-            _LOGGER.debug("_get(url), response.status=%s", resp.status)
+            _LOGGER.warn("_get(url), response.status=%s", resp.status)
             response = await resp.json(content_type=None)
 
         if "room_temp_1_msb" in response and self._fake_room:
@@ -80,7 +94,7 @@ class InComfortObject:
             response.update({"room_temp_1_msb": temp})
             _LOGGER.warning("_get(): room_temp_1 = %s", (temp * 256 + 255) / 100)
 
-        _LOGGER.debug("_get(url=%s): response = %s", url, response)
+        _LOGGER.warn("_get(url=%s): response = %s", url, response)
         return response
 
 
@@ -94,7 +108,7 @@ class Gateway(InComfortObject):
         password: str = None,
         session: aiohttp.ClientSession = None,
     ):
-        _LOGGER.debug("Gateway.__init__(hostname=%s)", hostname)
+        _LOGGER.warn("Gateway.__init__(hostname=%s)", hostname)
         super().__init__()
 
         self._gateway = self
@@ -112,7 +126,7 @@ class Gateway(InComfortObject):
 
     @property
     async def heaters(self) -> list:
-        _LOGGER.debug("Gateway.heaters")
+        _LOGGER.warn("Gateway.heaters")
 
         if self._heaters is None:
             url = f"{self._url_base}heaterlist.json"
@@ -125,8 +139,8 @@ class Gateway(InComfortObject):
 class Heater(InComfortObject):
     """Representation of an InComfort Heater."""
 
-    def __init__(self, serial_no: str, gateway: Gateway):
-        _LOGGER.debug("Heater.__init__(serial_no=%s)", serial_no)
+    def __init__(self, serial_no: str, gateway: Gateway, fake_room=True):
+        _LOGGER.warn("Heater.__init__(serial_no=%s)", serial_no)
         super().__init__()
 
         self._serial_no = serial_no
@@ -135,10 +149,11 @@ class Heater(InComfortObject):
         self._data = self._status = {}
         self._rooms = self._fake_room = None
 
-        self.fake_room = False  # True for testing
+        self.fake_room = fake_room
 
     @property
     def fake_room(self) -> int:
+        """Create a fake room (for testing)."""
         return self._fake_room
 
     @fake_room.setter
@@ -149,36 +164,20 @@ class Heater(InComfortObject):
 
     async def update(self):
         """Retrieve the Heater's status from the Gateway."""
-        _LOGGER.debug("Heater.update()")
+        _LOGGER.warn("Heater.update()")
 
         url = f"{self._gateway._url_base}data.json?heater={DEFAULT_HEATER_NO}"
 
         self._data = await self._get(url)
-
         self._status = status = {}
 
-        status["display_code"] = self.display_code if self._data else None
-        status["display_text"] = self.display_text if self._data else None
-        status["fault_code"] = self.fault_code if self._data else None
+        for attr in HEATER_ATTRS:
+            status[attr] = getattr(self, attr, None)
 
-        status["is_burning"] = self.is_burning if self._data else None
-        status["is_failed"] = self.is_failed if self._data else None
-        status["is_pumping"] = self.is_pumping if self._data else None
-        status["is_tapping"] = self.is_tapping if self._data else None
+        for key in ["nodenr", "rf_message_rssi", "rfstatus_cntr"]:
+            status[key] = self._data.get(key)
 
-        status["heater_temp"] = self.heater_temp if self._data else None
-        status["tap_temp"] = self.tap_temp if self._data else None
-        status["pressure"] = self.pressure if self._data else None
-
-        status["serial_no"] = self.serial_no if self._data else None
-
-        status["nodenr"] = self._data["nodenr"] if self._data else None
-        status["rf_message_rssi"] = (
-            self._data["rf_message_rssi"] if self._data else None
-        )
-        status["rfstatus_cntr"] = self._data["rfstatus_cntr"] if self._data else None
-
-        _LOGGER.debug("status() = %s", status)
+        _LOGGER.warn("status(heater) = %s", status)
 
         for room in self.rooms:
             room._data = self._data
@@ -198,10 +197,7 @@ class Heater(InComfortObject):
 
     @property
     def display_text(self) -> str:
-        """Return the display code as a string rather than a number.
-
-        If the heater is in a failed state, this will be the fault_code.
-        """
+        """Return the display code as a string rather than a number."""
         _code = self._data["displ_code"]
         return DISPLAY_CODES.get(_code, f"unknown/other, code = {_code} (fault code?)")
 
@@ -243,7 +239,7 @@ class Heater(InComfortObject):
 
     @property
     def serial_no(self) -> str:
-        """Return the serial number of the heater."""
+        """Return the decoded (not reported) serial number of the heater."""
         return (
             str(self._data["serial_year"])
             + str(self._data["serial_month"])
@@ -261,7 +257,6 @@ class Heater(InComfortObject):
                 for r in ["1", "2"]
                 if _value(f"room_temp_{r}", self._data) is not None
             ]
-
         return self._rooms
 
 
@@ -269,7 +264,7 @@ class Room(InComfortObject):
     """Representation of an InComfort Room."""
 
     def __init__(self, room_no: int, heater: Heater):
-        _LOGGER.debug("Room.__init__(room_no=%s)", room_no)
+        _LOGGER.warn("Room.__init__(room_no=%s)", room_no)
         super().__init__()
 
         self._gateway = heater._gateway
@@ -283,11 +278,10 @@ class Room(InComfortObject):
         """Return the current state of the room."""
         status = {}
 
-        status["room_temp"] = self.room_temp if self._data else None
-        status["setpoint"] = self.setpoint if self._data else None
-        status["override"] = self.override if self._data else None
+        for attr in ["room_temp", "setpoint", "override"]:
+            status[attr] = getattr(self, attr, None)
 
-        _LOGGER.debug("status() = %s", status)
+        _LOGGER.warn("status(room_%s) = %s", self.room_no, status)
         return status
 
     @property
@@ -306,7 +300,7 @@ class Room(InComfortObject):
         return _value(f"room_set_ovr_{self.room_no}", self._data)
 
     async def set_override(self, setpoint: float) -> None:
-        _LOGGER.debug("Room(%s).set_override(setpoint=%s)", self.room_no, setpoint)
+        _LOGGER.warn("Room(%s).set_override(setpoint=%s)", self.room_no, setpoint)
 
         setpoint = min(max(setpoint, OVERRIDE_MIN_TEMP), OVERRIDE_MAX_TEMP)
         url = "{}data.json?heater={}&thermostat={}&setpoint={}".format(
@@ -321,7 +315,7 @@ class Room(InComfortObject):
 async def main(loop):
     import argparse
 
-    _LOGGER.debug("main()")
+    _LOGGER.warn("main()")
 
     parser = argparse.ArgumentParser()
 
