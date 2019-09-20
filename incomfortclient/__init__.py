@@ -10,9 +10,9 @@ import random
 
 import aiohttp
 
-INVALID_VALUE = (2**15-1)/100.0  # 327.67
+INVALID_VALUE = (2 ** 15 - 1) / 100.0  # 327.67
 
-SERIAL_LINE = '0123456789abcdefghijklmnopqrstuvwxyz'
+SERIAL_LINE = "0123456789abcdefghijklmnopqrstuvwxyz"
 
 # key label: IO
 BITMASK_BURNER = 0x08  # burner state: on / off
@@ -22,20 +22,20 @@ BITMASK_TAP = 0x04  # tap (DHW) state: function on / off
 
 # key label: displ_code
 DISPLAY_CODES = {
-    0: 'opentherm',
-    15: 'boiler ext.',
-    24: 'frost',
-    37: 'central heating rf',
-    51: 'tapwater int.',
-    85: 'sensortest',
-    102: 'central heating',
-    126: 'standby',
-    153: 'postrun boiler',
-    170: 'service',
-    204: 'tapwater',
-    231: 'postrun ch',
-    240: 'boiler int.',
-    255: 'buffer'
+    0: "opentherm",
+    15: "boiler ext.",
+    24: "frost",
+    37: "central heating rf",
+    51: "tapwater int.",
+    85: "sensortest",
+    102: "central heating",
+    126: "standby",
+    153: "postrun boiler",
+    170: "service",
+    204: "tapwater",
+    231: "postrun ch",
+    240: "boiler int.",
+    255: "buffer",
 }
 
 DEFAULT_HEATER_NO = 0
@@ -47,13 +47,12 @@ _LOGGER = logging.getLogger(__name__)
 
 # pylint: disable=protected-access, fixme, missing-docstring
 
+
 def _value(key_stub: str, data_dict: dict) -> float:
-    def _convert(most_significant_byte: int,
-                 least_significant_byte: int) -> float:
+    def _convert(most_significant_byte: int, least_significant_byte: int) -> float:
         return (most_significant_byte * 256 + least_significant_byte) / 100.0
 
-    _value = _convert(data_dict[key_stub + '_msb'],
-                      data_dict[key_stub + '_lsb'])
+    _value = _convert(data_dict[key_stub + "_msb"], data_dict[key_stub + "_lsb"])
     return _value if _value != INVALID_VALUE else None
 
 
@@ -75,9 +74,9 @@ class InComfortObject(object):
             _LOGGER.debug("_get(url), response.status=%s", response.status)
             response = await response.json(content_type=None)
 
-        if 'room_temp_1_msb' in response and self._fake_room:  # TODO: testing only
+        if "room_temp_1_msb" in response and self._fake_room:  # TODO: testing only
             temp = 5 + random.randint(0, 9)
-            response.update({'room_temp_1_msb': temp})
+            response.update({"room_temp_1_msb": temp})
             _LOGGER.warn("_get(): room_temp_1 = %s", (temp * 256 + 255) / 100)
 
         _LOGGER.debug("_get(url=%s): response = %s", url, response)
@@ -87,8 +86,13 @@ class InComfortObject(object):
 class Gateway(InComfortObject):
     """Representation of an InComfort Gateway."""
 
-    def __init__(self, hostname: str, username: str = None,
-                 password: str = None, session: aiohttp.ClientSession = None):
+    def __init__(
+        self,
+        hostname: str,
+        username: str = None,
+        password: str = None,
+        session: aiohttp.ClientSession = None,
+    ):
         _LOGGER.debug("Gateway.__init__(hostname=%s)", hostname)
         super().__init__()
 
@@ -99,10 +103,10 @@ class Gateway(InComfortObject):
         self._session = session  # if session else aiohttp.ClientSession()
         self._timeout = aiohttp.ClientTimeout(total=20)
         if username is None:
-            self._url_base = 'http://{0}/'.format(hostname)
+            self._url_base = "http://{0}/".format(hostname)
             self._auth = None
         else:
-            self._url_base = 'http://{0}/protect/'.format(hostname)
+            self._url_base = "http://{0}/protect/".format(hostname)
             self._auth = aiohttp.BasicAuth(login=username, password=password)
 
     @property
@@ -110,9 +114,9 @@ class Gateway(InComfortObject):
         _LOGGER.debug("Gateway.heaters")
 
         if self._heaters is None:
-            url = '{}heaterlist.json'.format(self._url_base)
+            url = "{}heaterlist.json".format(self._url_base)
             heaters = await self._get(url)
-            self._heaters = [Heater(h, self) for h in heaters['heaterlist'] if h]
+            self._heaters = [Heater(h, self) for h in heaters["heaterlist"] if h]
 
         return self._heaters
 
@@ -149,8 +153,7 @@ class Heater(InComfortObject):
         """
         _LOGGER.debug("Heater.update()")
 
-        url = '{}data.json?heater={}'.format(
-            self._gateway._url_base, DEFAULT_HEATER_NO)
+        url = "{}data.json?heater={}".format(self._gateway._url_base, DEFAULT_HEATER_NO)
 
         self._data = await self._get(url)
         for room in self.rooms:
@@ -161,24 +164,26 @@ class Heater(InComfortObject):
         """Return the current state of the heater."""
         status = {}
 
-        status['display_code'] = self.display_code if self._data else None
-        status['display_text'] = self.display_text if self._data else None
-        status['fault_code'] = self.fault_code if self._data else None
+        status["display_code"] = self.display_code if self._data else None
+        status["display_text"] = self.display_text if self._data else None
+        status["fault_code"] = self.fault_code if self._data else None
 
-        status['is_burning'] = self.is_burning if self._data else None
-        status['is_failed'] = self.is_failed if self._data else None
-        status['is_pumping'] = self.is_pumping if self._data else None
-        status['is_tapping'] = self.is_tapping if self._data else None
+        status["is_burning"] = self.is_burning if self._data else None
+        status["is_failed"] = self.is_failed if self._data else None
+        status["is_pumping"] = self.is_pumping if self._data else None
+        status["is_tapping"] = self.is_tapping if self._data else None
 
-        status['heater_temp'] = self.heater_temp if self._data else None
-        status['tap_temp'] = self.tap_temp if self._data else None
-        status['pressure'] = self.pressure if self._data else None
+        status["heater_temp"] = self.heater_temp if self._data else None
+        status["tap_temp"] = self.tap_temp if self._data else None
+        status["pressure"] = self.pressure if self._data else None
 
-        status['serial_no'] = self.serial_no if self._data else None
+        status["serial_no"] = self.serial_no if self._data else None
 
-        status['nodenr'] = self._data['nodenr'] if self._data else None
-        status['rf_message_rssi'] = self._data['rf_message_rssi'] if self._data else None
-        status['rfstatus_cntr'] = self._data['rfstatus_cntr'] if self._data else None
+        status["nodenr"] = self._data["nodenr"] if self._data else None
+        status["rf_message_rssi"] = (
+            self._data["rf_message_rssi"] if self._data else None
+        )
+        status["rfstatus_cntr"] = self._data["rfstatus_cntr"] if self._data else None
 
         _LOGGER.debug("status() = %s", status)
         return status
@@ -189,7 +194,7 @@ class Heater(InComfortObject):
 
         If the heater is in a failed state, this will be the fault_code.
         """
-        return self._data['displ_code']
+        return self._data["displ_code"]
 
     @property
     def display_text(self) -> str:
@@ -197,63 +202,67 @@ class Heater(InComfortObject):
 
         If the heater is in a failed state, this will be the 'fault_code'.
         """
-        _code = self._data['displ_code']
+        _code = self._data["displ_code"]
         return DISPLAY_CODES.get(
-            _code,
-            "unknown/other, code = {0} (fault code?)".format(_code)
+            _code, "unknown/other, code = {0} (fault code?)".format(_code)
         )
 
     @property
     def fault_code(self) -> int:
-        _code = self._data['displ_code']
+        _code = self._data["displ_code"]
         return _code if self.is_failed else 0
 
     @property
     def is_burning(self) -> bool:
-        return bool(self._data['IO'] & BITMASK_BURNER)
+        return bool(self._data["IO"] & BITMASK_BURNER)
 
     @property
     def is_failed(self) -> bool:
-        return bool(self._data['IO'] & BITMASK_FAIL)
+        return bool(self._data["IO"] & BITMASK_FAIL)
 
     @property
     def is_pumping(self) -> bool:
-        return bool(self._data['IO'] & BITMASK_PUMP)
+        return bool(self._data["IO"] & BITMASK_PUMP)
 
     @property
     def is_tapping(self) -> bool:
-        return bool(self._data['IO'] & BITMASK_TAP)
+        return bool(self._data["IO"] & BITMASK_TAP)
 
     @property
     def heater_temp(self) -> float:
         """Return the supply temperature of the CV (circulating volume)."""
-        return _value('ch_temp', self._data)
+        return _value("ch_temp", self._data)
 
     @property
     def tap_temp(self) -> float:
         """Return the current temperature of the HW (hot water)."""
-        return _value('tap_temp', self._data)
+        return _value("tap_temp", self._data)
 
     @property
     def pressure(self) -> float:
         """Return the water pressure of the CH (central heating)."""
-        return _value('ch_pressure', self._data)
+        return _value("ch_pressure", self._data)
 
     @property
     def serial_no(self) -> str:
         """Return the serial number of the heater."""
-        return (str(self._data['serial_year']) +
-                str(self._data['serial_month']) +
-                SERIAL_LINE[self._data['serial_line']] +
-                str(self._data['serial_sn1']) +
-                str(self._data['serial_sn2']) +
-                str(self._data['serial_sn3']))
+        return (
+            str(self._data["serial_year"])
+            + str(self._data["serial_month"])
+            + SERIAL_LINE[self._data["serial_line"]]
+            + str(self._data["serial_sn1"])
+            + str(self._data["serial_sn2"])
+            + str(self._data["serial_sn3"])
+        )
 
     @property
     def rooms(self) -> list:
         if self._rooms is None:
-            self._rooms = [Room(r, self) for r in ['1', '2']
-                           if _value('room_temp_{}'.format(r), self._data) is not None]
+            self._rooms = [
+                Room(r, self)
+                for r in ["1", "2"]
+                if _value("room_temp_{}".format(r), self._data) is not None
+            ]
 
         return self._rooms
 
@@ -276,9 +285,9 @@ class Room(InComfortObject):
         """Return the current state of the room."""
         status = {}
 
-        status['room_temp'] = self.room_temp if self._data else None
-        status['setpoint'] = self.setpoint if self._data else None
-        status['override'] = self.override if self._data else None
+        status["room_temp"] = self.room_temp if self._data else None
+        status["setpoint"] = self.setpoint if self._data else None
+        status["override"] = self.override if self._data else None
 
         _LOGGER.debug("status() = %s", status)
         return status
@@ -286,62 +295,79 @@ class Room(InComfortObject):
     @property
     def room_temp(self) -> float:
         """Return the current temperature of the room."""
-        return _value('room_temp_{}'.format(self.room_no), self._data)
+        return _value("room_temp_{}".format(self.room_no), self._data)
 
     @property
     def setpoint(self) -> float:
         """Return the (scheduled?) setpoint temperature of the room."""
-        return _value('room_temp_set_{}'.format(self.room_no), self._data)
+        return _value("room_temp_set_{}".format(self.room_no), self._data)
 
     @property
     def override(self) -> float:
         """Return the override setpoint temperature of the room."""
-        return _value('room_set_ovr_{}'.format(self.room_no), self._data)
+        return _value("room_set_ovr_{}".format(self.room_no), self._data)
 
     async def set_override(self, setpoint: float) -> None:
-        _LOGGER.debug("Room(%s).set_override(setpoint=%s)",
-                      self.room_no, setpoint)
+        _LOGGER.debug("Room(%s).set_override(setpoint=%s)", self.room_no, setpoint)
 
         setpoint = min(max(setpoint, OVERRIDE_MIN_TEMP), OVERRIDE_MAX_TEMP)
-        url = '{}data.json?heater={}&thermostat={}&setpoint={}'.format(
+        url = "{}data.json?heater={}&thermostat={}&setpoint={}".format(
             self._gateway._url_base,
             DEFAULT_HEATER_NO,
             int(self.room_no) - 1,
-            int((setpoint - OVERRIDE_MIN_TEMP) * 10)
+            int((setpoint - OVERRIDE_MIN_TEMP) * 10),
         )
         await self._get(url)
 
 
 async def main(loop):
     import argparse
+
     _LOGGER.debug("main()")
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("gateway",
-                        help="hostname/address of the InComfort gateway")
+    parser.add_argument("gateway", help="hostname/address of the InComfort gateway")
 
     credentials_group = parser.add_argument_group(
-        "user credentials - used only for newer firmwares")
+        "user credentials - used only for newer firmwares"
+    )
     credentials_group.add_argument(
-        "-u", "--username", type=str, required=False, default=None)
+        "-u", "--username", type=str, required=False, default=None
+    )
     credentials_group.add_argument(
-        "-p", "--password", type=str, required=False, default=None)
+        "-p", "--password", type=str, required=False, default=None
+    )
 
-    parser.add_argument("-t", "--temp", type=float, required=False,
-                        help="set room temperature (in C, no default)")
-    parser.add_argument("-r", "--raw", action='store_true', required=False,
-                        help="return raw JSON, useful for testing")
+    parser.add_argument(
+        "-t",
+        "--temp",
+        type=float,
+        required=False,
+        help="set room temperature (in C, no default)",
+    )
+    parser.add_argument(
+        "-r",
+        "--raw",
+        action="store_true",
+        required=False,
+        help="return raw JSON, useful for testing",
+    )
 
     args = parser.parse_args()
 
     if bool(args.username) ^ bool(args.password):
-        parser.error("--username and --password must be given together, "
-                     "or not at all")
+        parser.error(
+            "--username and --password must be given together, " "or not at all"
+        )
 
     async with aiohttp.ClientSession() as session:
-        gateway = Gateway(args.gateway, session=session,
-                          username=args.username, password=args.password)
+        gateway = Gateway(
+            args.gateway,
+            session=session,
+            username=args.username,
+            password=args.password,
+        )
         try:
             heater = list(await gateway.heaters)[DEFAULT_HEATER_NO]
         except aiohttp.client_exceptions.ClientResponseError:
@@ -354,8 +380,7 @@ async def main(loop):
             try:
                 await heater.rooms[DEFAULT_ROOM_NO].set_override(args.temp)
             except IndexError:
-                _LOGGER.error(
-                    "IndexError Hint: There is no valid room thermostat")
+                _LOGGER.error("IndexError Hint: There is no valid room thermostat")
                 raise
 
         elif args.raw:
@@ -364,12 +389,12 @@ async def main(loop):
         else:
             status = dict(heater.status)
             for room in heater.rooms:
-                status['room_{}'.format(room.room_no)] = room.status
+                status["room_{}".format(room.room_no)] = room.status
             print(status)
 
 
 # called from CLI? python itclient.py <hostname/address> [--temp <int>]
-if __name__ == '__main__':
+if __name__ == "__main__":
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main(loop))
     loop.close()
