@@ -45,7 +45,7 @@ OVERRIDE_MIN_TEMP = 5.0
 
 _LOGGER = logging.getLogger(__name__)
 
-# pylint: disable=protected-access, fixme, missing-docstring
+# pylint: disable=protected-access, missing-docstring
 
 
 def _value(key_stub: str, data_dict: dict) -> float:
