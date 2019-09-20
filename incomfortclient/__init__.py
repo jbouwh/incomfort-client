@@ -56,11 +56,12 @@ def _value(key_stub: str, data_dict: dict) -> float:
     return _value if _value != INVALID_VALUE else None
 
 
-class InComfortObject(object):
+class InComfortObject():
     """Base for InComfortObjects."""
 
     def __init__(self):
         self._gateway = None
+        self._fake_room = None
 
     async def _get(self, url: str):
         _LOGGER.debug("_get(url=%s, _auth=%s)", url, self._gateway._auth)
@@ -74,10 +75,10 @@ class InComfortObject(object):
             _LOGGER.debug("_get(url), response.status=%s", response.status)
             response = await response.json(content_type=None)
 
-        if "room_temp_1_msb" in response and self._fake_room:  # TODO: testing only
+        if "room_temp_1_msb" in response and self._fake_room:  # TODO: for testing only
             temp = 5 + random.randint(0, 9)
             response.update({"room_temp_1_msb": temp})
-            _LOGGER.warn("_get(): room_temp_1 = %s", (temp * 256 + 255) / 100)
+            _LOGGER.warning("_get(): room_temp_1 = %s", (temp * 256 + 255) / 100)
 
         _LOGGER.debug("_get(url=%s): response = %s", url, response)
         return response
@@ -395,6 +396,6 @@ async def main(loop):
 
 # called from CLI? python itclient.py <hostname/address> [--temp <int>]
 if __name__ == "__main__":
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(main(loop))
-    loop.close()
+    LOOP = asyncio.get_event_loop()
+    LOOP.run_until_complete(main(LOOP))
+    LOOP.close()
