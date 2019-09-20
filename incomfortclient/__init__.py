@@ -139,7 +139,7 @@ class Gateway(InComfortObject):
 class Heater(InComfortObject):
     """Representation of an InComfort Heater."""
 
-    def __init__(self, serial_no: str, gateway: Gateway, fake_room=True):
+    def __init__(self, serial_no: str, gateway: Gateway, fake_room=False):
         _LOGGER.warn("Heater.__init__(serial_no=%s)", serial_no)
         super().__init__()
 
