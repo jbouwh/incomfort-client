@@ -132,7 +132,7 @@ class Heater(InComfortObject):
         self._gateway = gateway
         self._rooms = None
 
-        self._fake_room = True
+        self._fake_room = False
 
         self._data = {}
         self._serial_no = serial_no
