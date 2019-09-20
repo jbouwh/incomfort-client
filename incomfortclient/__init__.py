@@ -56,7 +56,7 @@ def _value(key_stub: str, data_dict: dict) -> float:
     return _value if _value != INVALID_VALUE else None
 
 
-class InComfortObject():
+class InComfortObject:
     """Base for InComfortObjects."""
 
     def __init__(self):
@@ -71,11 +71,11 @@ class InComfortObject():
             auth=self._gateway._auth,
             raise_for_status=True,
             timeout=self._gateway._timeout,
-        ) as response:
-            _LOGGER.debug("_get(url), response.status=%s", response.status)
-            response = await response.json(content_type=None)
+        ) as resp:
+            _LOGGER.debug("_get(url), response.status=%s", resp.status)
+            response = await resp.json(content_type=None)
 
-        if "room_temp_1_msb" in response and self._fake_room:  # TODO: for testing only
+        if "room_temp_1_msb" in response and self._fake_room:
             temp = 5 + random.randint(0, 9)
             response.update({"room_temp_1_msb": temp})
             _LOGGER.warning("_get(): room_temp_1 = %s", (temp * 256 + 255) / 100)
@@ -100,14 +100,14 @@ class Gateway(InComfortObject):
         self._gateway = self
         self._heaters = None
 
-        # TODO: how to close session on object destruction if we created one?
-        self._session = session  # if session else aiohttp.ClientSession()
+        # TODO: how to safely close session on object destruction one was created here?
+        self._session = session if session else aiohttp.ClientSession()
         self._timeout = aiohttp.ClientTimeout(total=20)
         if username is None:
-            self._url_base = "http://{0}/".format(hostname)
+            self._url_base = f"http://{hostname}/"
             self._auth = None
         else:
-            self._url_base = "http://{0}/protect/".format(hostname)
+            self._url_base = f"http://{hostname}/protect/"
             self._auth = aiohttp.BasicAuth(login=username, password=password)
 
     @property
@@ -115,7 +115,7 @@ class Gateway(InComfortObject):
         _LOGGER.debug("Gateway.heaters")
 
         if self._heaters is None:
-            url = "{}heaterlist.json".format(self._url_base)
+            url = f"{self._url_base}heaterlist.json"
             heaters = await self._get(url)
             self._heaters = [Heater(h, self) for h in heaters["heaterlist"] if h]
 
@@ -129,13 +129,13 @@ class Heater(InComfortObject):
         _LOGGER.debug("Heater.__init__(serial_no=%s)", serial_no)
         super().__init__()
 
-        self._gateway = gateway
-        self._rooms = None
-
-        self._fake_room = False
-
-        self._data = {}
         self._serial_no = serial_no
+        self._gateway = gateway
+
+        self._data = self._status = {}
+        self._rooms = self._fake_room = None
+
+        self.fake_room = False  # True for testing
 
     @property
     def fake_room(self) -> int:
@@ -148,22 +148,14 @@ class Heater(InComfortObject):
             _LOGGER.info("Heater(%s): Fake room mode is enabled", self._serial_no)
 
     async def update(self):
-        """Retrieve the Heater's status from the Gateway.
-
-        GET http://<ip address>/data.json?heater=<nr>
-        """
+        """Retrieve the Heater's status from the Gateway."""
         _LOGGER.debug("Heater.update()")
 
-        url = "{}data.json?heater={}".format(self._gateway._url_base, DEFAULT_HEATER_NO)
+        url = f"{self._gateway._url_base}data.json?heater={DEFAULT_HEATER_NO}"
 
         self._data = await self._get(url)
-        for room in self.rooms:
-            room._data = self._data
 
-    @property
-    def status(self) -> dict:
-        """Return the current state of the heater."""
-        status = {}
+        self._status = status = {}
 
         status["display_code"] = self.display_code if self._data else None
         status["display_text"] = self.display_text if self._data else None
@@ -187,7 +179,14 @@ class Heater(InComfortObject):
         status["rfstatus_cntr"] = self._data["rfstatus_cntr"] if self._data else None
 
         _LOGGER.debug("status() = %s", status)
-        return status
+
+        for room in self.rooms:
+            room._data = self._data
+
+    @property
+    def status(self) -> dict:
+        """Return the current state of the heater."""
+        return self._status
 
     @property
     def display_code(self) -> int:
@@ -201,12 +200,10 @@ class Heater(InComfortObject):
     def display_text(self) -> str:
         """Return the display code as a string rather than a number.
 
-        If the heater is in a failed state, this will be the 'fault_code'.
+        If the heater is in a failed state, this will be the fault_code.
         """
         _code = self._data["displ_code"]
-        return DISPLAY_CODES.get(
-            _code, "unknown/other, code = {0} (fault code?)".format(_code)
-        )
+        return DISPLAY_CODES.get(_code, f"unknown/other, code = {_code} (fault code?)")
 
     @property
     def fault_code(self) -> int:
@@ -262,7 +259,7 @@ class Heater(InComfortObject):
             self._rooms = [
                 Room(r, self)
                 for r in ["1", "2"]
-                if _value("room_temp_{}".format(r), self._data) is not None
+                if _value(f"room_temp_{r}", self._data) is not None
             ]
 
         return self._rooms
@@ -296,17 +293,17 @@ class Room(InComfortObject):
     @property
     def room_temp(self) -> float:
         """Return the current temperature of the room."""
-        return _value("room_temp_{}".format(self.room_no), self._data)
+        return _value(f"room_temp_{self.room_no}", self._data)
 
     @property
     def setpoint(self) -> float:
         """Return the (scheduled?) setpoint temperature of the room."""
-        return _value("room_temp_set_{}".format(self.room_no), self._data)
+        return _value(f"room_temp_set_{self.room_no}", self._data)
 
     @property
     def override(self) -> float:
         """Return the override setpoint temperature of the room."""
-        return _value("room_set_ovr_{}".format(self.room_no), self._data)
+        return _value(f"room_set_ovr_{self.room_no}", self._data)
 
     async def set_override(self, setpoint: float) -> None:
         _LOGGER.debug("Room(%s).set_override(setpoint=%s)", self.room_no, setpoint)
@@ -390,12 +387,12 @@ async def main(loop):
         else:
             status = dict(heater.status)
             for room in heater.rooms:
-                status["room_{}".format(room.room_no)] = room.status
+                status[f"room_{room.room_no}"] = room.status
             print(status)
 
 
-# called from CLI? python itclient.py <hostname/address> [--temp <int>]
-if __name__ == "__main__":
+# called from CLI?
+if __name__ == "__main__":  # called from CLI?
     LOOP = asyncio.get_event_loop()
     LOOP.run_until_complete(main(LOOP))
     LOOP.close()
