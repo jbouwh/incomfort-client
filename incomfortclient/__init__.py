@@ -180,7 +180,7 @@ class Heater(InComfortObject):
         _LOGGER.warn("status(heater) = %s", status)
 
         for room in self.rooms:
-            room._data = self._data
+            room._data = self._data  # this is not elegant
 
     @property
     def status(self) -> dict:
@@ -247,7 +247,7 @@ class Heater(InComfortObject):
             + str(self._data["serial_sn1"])
             + str(self._data["serial_sn2"])
             + str(self._data["serial_sn3"])
-        )
+        )  # should be the same as: self._serial_no
 
     @property
     def rooms(self) -> list:
