@@ -113,7 +113,7 @@ class Gateway(InComfortObject):
         super().__init__()
 
         self._gateway = self
-        self._heaters = []
+        self._heaters: List[Any] = []
 
         # TODO: how to safely close session on object destruction one was created here?
         self._session = session if session else aiohttp.ClientSession()
@@ -147,9 +147,10 @@ class Heater(InComfortObject):
         self._serial_no = serial_no
         self._gateway = gateway
 
-        self._data = self._status = {}
+        self._data: Dict[str, Any] = {}
+        self._status: Dict[str, Any] = {}
         self._fake_room = fake_room
-        self._rooms = []
+        self._rooms: list = []
 
     @property
     def fake_room(self) -> bool:
@@ -269,7 +270,7 @@ class Room(InComfortObject):
 
         self._gateway = heater._gateway
         self._heater = heater
-        self._data = {}
+        self._data: dict = {}
 
         self.room_no = room_no
 
