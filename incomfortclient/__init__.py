@@ -7,6 +7,7 @@
 import asyncio
 import logging
 import random
+from typing import Any, Dict, List, Optional
 
 import aiohttp
 
@@ -62,7 +63,7 @@ _LOGGER = logging.getLogger(__name__)
 # pylint: disable=protected-access, missing-docstring
 
 
-def _value(key_stub: str, data_dict: dict) -> float:
+def _value(key_stub: str, data_dict: dict) -> Optional[float]:
     def _convert(most_significant_byte: int, least_significant_byte: int) -> float:
         return (most_significant_byte * 256 + least_significant_byte) / 100.0
 
@@ -73,9 +74,9 @@ def _value(key_stub: str, data_dict: dict) -> float:
 class InComfortObject:
     """Base for InComfortObjects."""
 
-    def __init__(self):
-        self._gateway = None
-        self._fake_room = None
+    def __init__(self) -> None:
+        self._gateway: Gateway = None
+        self._fake_room: bool = None
 
     async def _get(self, url: str):
         _LOGGER.warn("_get(url=%s, _auth=%s)", url, self._gateway._auth)
@@ -107,12 +108,12 @@ class Gateway(InComfortObject):
         username: str = None,
         password: str = None,
         session: aiohttp.ClientSession = None,
-    ):
+    ) -> None:
         _LOGGER.warn("Gateway.__init__(hostname=%s)", hostname)
         super().__init__()
 
         self._gateway = self
-        self._heaters = None
+        self._heaters = []
 
         # TODO: how to safely close session on object destruction one was created here?
         self._session = session if session else aiohttp.ClientSession()
@@ -125,10 +126,10 @@ class Gateway(InComfortObject):
             self._auth = aiohttp.BasicAuth(login=username, password=password)
 
     @property
-    async def heaters(self) -> list:
+    async def heaters(self) -> List[Any]:
         _LOGGER.warn("Gateway.heaters")
 
-        if self._heaters is None:
+        if self._heaters == []:
             url = f"{self._url_base}heaterlist.json"
             heaters = await self._get(url)
             self._heaters = [Heater(h, self) for h in heaters["heaterlist"] if h]
@@ -139,7 +140,7 @@ class Gateway(InComfortObject):
 class Heater(InComfortObject):
     """Representation of an InComfort Heater."""
 
-    def __init__(self, serial_no: str, gateway: Gateway, fake_room=False):
+    def __init__(self, serial_no: str, gateway: Gateway, fake_room=False) -> None:
         _LOGGER.warn("Heater.__init__(serial_no=%s)", serial_no)
         super().__init__()
 
@@ -147,22 +148,21 @@ class Heater(InComfortObject):
         self._gateway = gateway
 
         self._data = self._status = {}
-        self._rooms = self._fake_room = None
-
-        self.fake_room = fake_room
+        self._fake_room = fake_room
+        self._rooms = []
 
     @property
-    def fake_room(self) -> int:
+    def fake_room(self) -> bool:
         """Create a fake room (for testing)."""
         return self._fake_room
 
     @fake_room.setter
-    def fake_room(self, value):
+    def fake_room(self, value) -> None:
         self._fake_room = value
         if self._fake_room:
             _LOGGER.info("Heater(%s): Fake room mode is enabled", self._serial_no)
 
-    async def update(self):
+    async def update(self) -> None:
         """Retrieve the Heater's status from the Gateway."""
         _LOGGER.warn("Heater.update()")
 
@@ -250,11 +250,11 @@ class Heater(InComfortObject):
         )  # should be the same as: self._serial_no
 
     @property
-    def rooms(self) -> list:
+    def rooms(self) -> List[Any]:
         if self._rooms is None:
             self._rooms = [
                 Room(r, self)
-                for r in ["1", "2"]
+                for r in [1, 2]
                 if _value(f"room_temp_{r}", self._data) is not None
             ]
         return self._rooms
@@ -263,7 +263,7 @@ class Heater(InComfortObject):
 class Room(InComfortObject):
     """Representation of an InComfort Room."""
 
-    def __init__(self, room_no: int, heater: Heater):
+    def __init__(self, room_no: int, heater: Heater) -> None:
         _LOGGER.warn("Room.__init__(room_no=%s)", room_no)
         super().__init__()
 
@@ -274,7 +274,7 @@ class Room(InComfortObject):
         self.room_no = room_no
 
     @property
-    def status(self) -> dict:
+    def status(self) -> Dict[str, Any]:
         """Return the current state of the room."""
         status = {}
 
@@ -285,17 +285,17 @@ class Room(InComfortObject):
         return status
 
     @property
-    def room_temp(self) -> float:
+    def room_temp(self) -> Optional[float]:
         """Return the current temperature of the room."""
         return _value(f"room_temp_{self.room_no}", self._data)
 
     @property
-    def setpoint(self) -> float:
+    def setpoint(self) -> Optional[float]:
         """Return the (scheduled?) setpoint temperature of the room."""
         return _value(f"room_temp_set_{self.room_no}", self._data)
 
     @property
-    def override(self) -> float:
+    def override(self) -> Optional[float]:
         """Return the override setpoint temperature of the room."""
         return _value(f"room_set_ovr_{self.room_no}", self._data)
 
@@ -312,7 +312,7 @@ class Room(InComfortObject):
         await self._get(url)
 
 
-async def main(loop):
+async def main(loop) -> None:
     import argparse
 
     _LOGGER.warn("main()")
