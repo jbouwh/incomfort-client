@@ -4,6 +4,8 @@
    Room thermostats.
    """
 
+DEBUG_MODE = False
+
 import asyncio
 import logging
 import random
@@ -11,7 +13,7 @@ from typing import Any, Dict, List, Optional
 
 import aiohttp
 
-INVALID_VALUE = (2 ** 15 - 1) / 100.0  # 327.67
+INVALID_VALUE = (2 ** 15 - 1) / 100.0  # 127 * 256 + 255 = 327.67
 
 SERIAL_LINE = "0123456789abcdefghijklmnopqrstuvwxyz"
 
@@ -58,7 +60,18 @@ DEFAULT_ROOM_NO = 0
 OVERRIDE_MAX_TEMP = 30.0
 OVERRIDE_MIN_TEMP = 5.0
 
+logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.INFO)
 _LOGGER = logging.getLogger(__name__)
+
+if DEBUG_MODE is True:
+    import ptvsd  # pylint: disable=import-error
+
+    _LOGGER.setLevel(logging.DEBUG)
+    _LOGGER.debug("Waiting for debugger to attach...")
+    ptvsd.enable_attach(address=("172.27.0.138", 5679), redirect_output=True)
+    ptvsd.wait_for_attach()
+    _LOGGER.debug("Debugger is attached!")
+
 
 # pylint: disable=protected-access, missing-docstring
 
@@ -79,7 +92,7 @@ class InComfortObject:
         self._fake_room: bool = None
 
     async def _get(self, url: str):
-        _LOGGER.warn("_get(url=%s, _auth=%s)", url, self._gateway._auth)
+        _LOGGER.debug("_get(url=%s, _auth=%s)", url, self._gateway._auth)
 
         async with self._gateway._session.get(
             url,
@@ -87,15 +100,16 @@ class InComfortObject:
             raise_for_status=True,
             timeout=self._gateway._timeout,
         ) as resp:
-            _LOGGER.warn("_get(url), response.status=%s", resp.status)
+            _LOGGER.debug("_get(url), response.status=%s", resp.status)
             response = await resp.json(content_type=None)
 
-        if "room_temp_1_msb" in response and self._fake_room:
-            temp = 5 + random.randint(0, 9)
-            response.update({"room_temp_1_msb": temp})
-            _LOGGER.warning("_get(): room_temp_1 = %s", (temp * 256 + 255) / 100)
+        if self._fake_room:
+            temp = 5 + random.randint(0, 8)
+            response.update({"room_temp_2_msb": temp})
+            response.update({"room_temp_2_lsb": 0})
+            _LOGGER.warning("fake_room: room_temp_2 set to %s", (temp * 256 ) / 100)
 
-        _LOGGER.warn("_get(url=%s): response = %s", url, response)
+        _LOGGER.debug("_get(url=%s): response = %s", url, response)
         return response
 
 
@@ -108,8 +122,9 @@ class Gateway(InComfortObject):
         username: str = None,
         password: str = None,
         session: aiohttp.ClientSession = None,
+        fake_room=False,
     ) -> None:
-        _LOGGER.warn("Gateway.__init__(hostname=%s)", hostname)
+        _LOGGER.debug("Gateway.__init__(hostname=%s)", hostname)
         super().__init__()
 
         self._gateway = self
@@ -125,14 +140,18 @@ class Gateway(InComfortObject):
             self._url_base = f"http://{hostname}/protect/"
             self._auth = aiohttp.BasicAuth(login=username, password=password)
 
+        self._fake_room = fake_room
+
     @property
     async def heaters(self) -> List[Any]:
-        _LOGGER.warn("Gateway.heaters")
+        _LOGGER.debug("Gateway.heaters")
 
         if self._heaters == []:
             url = f"{self._url_base}heaterlist.json"
             heaters = await self._get(url)
             self._heaters = [Heater(h, self) for h in heaters["heaterlist"] if h]
+
+        self._heaters[0].fake_room = self._fake_room
 
         return self._heaters
 
@@ -140,8 +159,8 @@ class Gateway(InComfortObject):
 class Heater(InComfortObject):
     """Representation of an InComfort Heater."""
 
-    def __init__(self, serial_no: str, gateway: Gateway, fake_room=False) -> None:
-        _LOGGER.warn("Heater.__init__(serial_no=%s)", serial_no)
+    def __init__(self, serial_no: str, gateway: Gateway) -> None:
+        _LOGGER.debug("Heater.__init__(serial_no=%s)", serial_no)
         super().__init__()
 
         self._serial_no = serial_no
@@ -149,7 +168,7 @@ class Heater(InComfortObject):
 
         self._data: Dict[str, Any] = {}
         self._status: Dict[str, Any] = {}
-        self._fake_room = fake_room
+        self._fake_room = False
         self._rooms: list = []
 
     @property
@@ -165,7 +184,7 @@ class Heater(InComfortObject):
 
     async def update(self) -> None:
         """Retrieve the Heater's status from the Gateway."""
-        _LOGGER.warn("Heater.update()")
+        _LOGGER.debug("Heater.update()")
 
         url = f"{self._gateway._url_base}data.json?heater={DEFAULT_HEATER_NO}"
 
@@ -178,7 +197,7 @@ class Heater(InComfortObject):
         for key in ["nodenr", "rf_message_rssi", "rfstatus_cntr"]:
             status[key] = self._data.get(key)
 
-        _LOGGER.warn("status(heater) = %s", status)
+        _LOGGER.debug("status(heater) = %s", status)
 
         for room in self.rooms:
             room._data = self._data  # this is not elegant
@@ -252,7 +271,7 @@ class Heater(InComfortObject):
 
     @property
     def rooms(self) -> List[Any]:
-        if self._rooms is None:
+        if self._rooms == []:
             self._rooms = [
                 Room(r, self)
                 for r in [1, 2]
@@ -265,7 +284,7 @@ class Room(InComfortObject):
     """Representation of an InComfort Room."""
 
     def __init__(self, room_no: int, heater: Heater) -> None:
-        _LOGGER.warn("Room.__init__(room_no=%s)", room_no)
+        _LOGGER.debug("Room.__init__(room_no=%s)", room_no)
         super().__init__()
 
         self._gateway = heater._gateway
@@ -282,7 +301,7 @@ class Room(InComfortObject):
         for attr in ["room_temp", "setpoint", "override"]:
             status[attr] = getattr(self, attr, None)
 
-        _LOGGER.warn("status(room_%s) = %s", self.room_no, status)
+        _LOGGER.debug("status(room_%s) = %s", self.room_no, status)
         return status
 
     @property
@@ -301,7 +320,7 @@ class Room(InComfortObject):
         return _value(f"room_set_ovr_{self.room_no}", self._data)
 
     async def set_override(self, setpoint: float) -> None:
-        _LOGGER.warn("Room(%s).set_override(setpoint=%s)", self.room_no, setpoint)
+        _LOGGER.debug("Room(%s).set_override(setpoint=%s)", self.room_no, setpoint)
 
         setpoint = min(max(setpoint, OVERRIDE_MIN_TEMP), OVERRIDE_MAX_TEMP)
         url = "{}data.json?heater={}&thermostat={}&setpoint={}".format(
@@ -316,7 +335,7 @@ class Room(InComfortObject):
 async def main(loop) -> None:
     import argparse
 
-    _LOGGER.warn("main()")
+    _LOGGER.debug("main()")
 
     parser = argparse.ArgumentParser()
 
