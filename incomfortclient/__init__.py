@@ -4,14 +4,14 @@
    Room thermostats.
    """
 
-DEBUG_MODE = False
-
 import asyncio
 import logging
 import random
 from typing import Any, Dict, List, Optional
 
 import aiohttp
+
+DEBUG_MODE = False
 
 INVALID_VALUE = (2 ** 15 - 1) / 100.0  # 127 * 256 + 255 = 327.67
 
@@ -107,7 +107,7 @@ class InComfortObject:
             temp = 5 + random.randint(0, 8)
             response.update({"room_temp_2_msb": temp})
             response.update({"room_temp_2_lsb": 0})
-            _LOGGER.warning("fake_room: room_temp_2 set to %s", (temp * 256 ) / 100)
+            _LOGGER.warning("fake_room: room_temp_2 set to %s", (temp * 256) / 100)
 
         _LOGGER.debug("_get(url=%s): response = %s", url, response)
         return response
@@ -130,7 +130,7 @@ class Gateway(InComfortObject):
         self._gateway = self
         self._heaters: List[Any] = []
 
-        # TODO: how to safely close session on object destruction one was created here?
+        # TODO: how to safely close session ifgit  one was created here?
         self._session = session if session else aiohttp.ClientSession()
         self._timeout = aiohttp.ClientTimeout(total=20)
         if username is None:
