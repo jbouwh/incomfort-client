@@ -100,7 +100,7 @@ class InComfortObject:
         )
 
         async with self._gateway._session.get(
-            url,
+            url=f"{self._gateway._url_base}{url}",
             auth=self._gateway._auth,
             raise_for_status=True,
             timeout=self._gateway._timeout,
@@ -112,8 +112,14 @@ class InComfortObject:
             temp = 5 + random.randint(0, 8)
             response.update({"room_temp_2_msb": temp})
             response.update({"room_temp_2_lsb": 0})
+
+            response.update({"room_temp_set_2_msb": 7})
+            response.update({"room_temp_set_2_lsb": 158})
+
             _LOGGER.info(
-                "_get(url=%s): room_temp_2 faked to %s", url, (temp * 256) / 100
+                "room_2 faked: temperature=%s, setpoint=%s",
+                _value(f"room_temp_2", response),  # 12.80-33.28C
+                _value(f"room_temp_set_2", response),  # 19.50C
             )
 
         _LOGGER.debug("_get(url=%s): response = %s", url, response)
@@ -152,8 +158,7 @@ class Gateway(InComfortObject):
     @property
     async def heaters(self) -> List[Any]:
         if self._heaters == []:
-            url = f"{self._url_base}heaterlist.json"
-            heaters = await self._get(url)
+            heaters = await self._get("heaterlist.json")
 
             self._heaters = [Heater(h, self) for h in heaters["heaterlist"] if h]
 
@@ -186,12 +191,11 @@ class Heater(InComfortObject):
     def fake_room(self, value) -> None:
         self._fake_room = value
         if self._fake_room:
-            _LOGGER.info("Heater(%s): Fake room mode is enabled", self._serial_no)
+            _LOGGER.warning("Heater(%s): fake_room mode is enabled", self._serial_no)
 
     async def update(self) -> None:
         """Retrieve the Heater's status from the Gateway."""
-        url = f"{self._gateway._url_base}data.json?heater={DEFAULT_HEATER_NO}"
-        self._data = await self._get(url)
+        self._data = await self._get(f"data.json?heater={DEFAULT_HEATER_NO}")
 
         self._status = status = {}
 
@@ -331,10 +335,9 @@ class Room(InComfortObject):
                 f"{OVERRIDE_MIN_TEMP}-{OVERRIDE_MAX_TEMP}."
             )
 
-        setpoint = int((setpoint - OVERRIDE_MIN_TEMP) * 10)
-
-        url = f"{self._gateway._url_base}data.json?heater={DEFAULT_HEATER_NO}"
-        url += f"&thermostat={int(self.room_no) - 1}&setpoint={setpoint}"
+        url = "data.json?heater={DEFAULT_HEATER_NO}"
+        url += f"&thermostat={int(self.room_no) - 1}"
+        url += f"&setpoint={int((setpoint - OVERRIDE_MIN_TEMP) * 10)}"
         await self._get(url)
 
 
