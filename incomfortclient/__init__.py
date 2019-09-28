@@ -1,6 +1,6 @@
 """Python client library for the InterGas InComfort system (via Lan2RF gateway).
 
-   Each Gateway can have up to 8 Heaters (Boilers) and each Heater can have 0-2
+   Each Gateway can have up to 8 Heaters (boilers) and each Heater can have 0-2
    Room thermostats.
    """
 
@@ -54,6 +54,7 @@ HEATER_ATTRS = [
     "pressure",
     "serial_no",
 ]
+ROOM_ATTRS = ["room_temp", "setpoint", "override"]
 
 DEFAULT_HEATER_NO = 0
 DEFAULT_ROOM_NO = 0
@@ -92,7 +93,9 @@ class InComfortObject:
         self._fake_room: bool = None
 
     async def _get(self, url: str):
-        _LOGGER.debug("_get(url=%s, _auth=%s)", url, self._gateway._auth)
+        _LOGGER.debug(
+            "_get(url=%s, _auth=%s)", url, "REDACTED" if self._gateway._auth else None
+        )
 
         async with self._gateway._session.get(
             url,
@@ -103,7 +106,7 @@ class InComfortObject:
             _LOGGER.debug("_get(url), response.status=%s", resp.status)
             response = await resp.json(content_type=None)
 
-        if self._fake_room:
+        if self._fake_room:  # inject a fake current temperature
             temp = 5 + random.randint(0, 8)
             response.update({"room_temp_2_msb": temp})
             response.update({"room_temp_2_lsb": 0})
@@ -130,7 +133,7 @@ class Gateway(InComfortObject):
         self._gateway = self
         self._heaters: List[Any] = []
 
-        # TODO: how to safely close session ifgit  one was created here?
+        # TODO: how to safely close session if one was created here?
         self._session = session if session else aiohttp.ClientSession()
         self._timeout = aiohttp.ClientTimeout(total=20)
         if username is None:
@@ -144,8 +147,6 @@ class Gateway(InComfortObject):
 
     @property
     async def heaters(self) -> List[Any]:
-        _LOGGER.debug("Gateway.heaters")
-
         if self._heaters == []:
             url = f"{self._url_base}heaterlist.json"
             heaters = await self._get(url)
@@ -184,8 +185,6 @@ class Heater(InComfortObject):
 
     async def update(self) -> None:
         """Retrieve the Heater's status from the Gateway."""
-        _LOGGER.debug("Heater.update()")
-
         url = f"{self._gateway._url_base}data.json?heater={DEFAULT_HEATER_NO}"
 
         self._data = await self._get(url)
@@ -298,7 +297,7 @@ class Room(InComfortObject):
         """Return the current state of the room."""
         status = {}
 
-        for attr in ["room_temp", "setpoint", "override"]:
+        for attr in [ROOM_ATTRS]:
             status[attr] = getattr(self, attr, None)
 
         _LOGGER.debug("status(room_%s) = %s", self.room_no, status)
@@ -369,9 +368,7 @@ async def main(loop) -> None:
     args = parser.parse_args()
 
     if bool(args.username) ^ bool(args.password):
-        parser.error(
-            "--username and --password must be given together, " "or not at all"
-        )
+        parser.error("--username and --password must be given together, or not at all")
 
     async with aiohttp.ClientSession() as session:
         gateway = Gateway(
@@ -383,7 +380,7 @@ async def main(loop) -> None:
         try:
             heater = list(await gateway.heaters)[DEFAULT_HEATER_NO]
         except aiohttp.client_exceptions.ClientResponseError:
-            _LOGGER.error("ClientResponseError Hint: Bad user credentials")
+            _LOGGER.error("ClientResponseError - Hint: Check the user credentials")
             raise
 
         await heater.update()
@@ -392,7 +389,7 @@ async def main(loop) -> None:
             try:
                 await heater.rooms[DEFAULT_ROOM_NO].set_override(args.temp)
             except IndexError:
-                _LOGGER.error("IndexError Hint: There is no valid room thermostat")
+                _LOGGER.error("IndexError - Hint: There is no valid room thermostat")
                 raise
 
         elif args.raw:
