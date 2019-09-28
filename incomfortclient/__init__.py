@@ -12,9 +12,11 @@ from typing import Any, Dict, List, Optional
 import aiohttp
 
 DEBUG_MODE = False
+FAKE_ROOM = False
+
+CLIENT_TIMEOUT = 20  # seconds
 
 INVALID_VALUE = (2 ** 15 - 1) / 100.0  # 127 * 256 + 255 = 327.67
-
 SERIAL_LINE = "0123456789abcdefghijklmnopqrstuvwxyz"
 
 # key label: IO
@@ -68,10 +70,10 @@ if DEBUG_MODE is True:
     import ptvsd  # pylint: disable=import-error
 
     _LOGGER.setLevel(logging.DEBUG)
-    _LOGGER.debug("Waiting for debugger to attach...")
+    _LOGGER.info("Waiting for debugger to attach...")
     ptvsd.enable_attach(address=("172.27.0.138", 5679), redirect_output=True)
     ptvsd.wait_for_attach()
-    _LOGGER.debug("Debugger is attached!")
+    _LOGGER.info("Debugger is attached!")
 
 
 # pylint: disable=protected-access, missing-docstring
@@ -94,7 +96,7 @@ class InComfortObject:
 
     async def _get(self, url: str):
         _LOGGER.debug(
-            "_get(url=%s, _auth=%s)", url, "REDACTED" if self._gateway._auth else None
+            "_get(url=%s, auth=%s)", url, "REDACTED" if self._gateway._auth else None
         )
 
         async with self._gateway._session.get(
@@ -103,14 +105,16 @@ class InComfortObject:
             raise_for_status=True,
             timeout=self._gateway._timeout,
         ) as resp:
-            _LOGGER.debug("_get(url), response.status=%s", resp.status)
             response = await resp.json(content_type=None)
 
-        if self._fake_room:  # inject a fake current temperature
+        # if enabled, inject a fake current temperature
+        if "room_temp_2_msb" in response and self._fake_room:
             temp = 5 + random.randint(0, 8)
             response.update({"room_temp_2_msb": temp})
             response.update({"room_temp_2_lsb": 0})
-            _LOGGER.warning("fake_room: room_temp_2 set to %s", (temp * 256) / 100)
+            _LOGGER.info(
+                "_get(url=%s): room_temp_2 faked to %s", url, (temp * 256) / 100
+            )
 
         _LOGGER.debug("_get(url=%s): response = %s", url, response)
         return response
@@ -125,9 +129,9 @@ class Gateway(InComfortObject):
         username: str = None,
         password: str = None,
         session: aiohttp.ClientSession = None,
-        fake_room=False,
+        fake_room=FAKE_ROOM,
     ) -> None:
-        _LOGGER.debug("Gateway.__init__(hostname=%s)", hostname)
+        _LOGGER.debug("Gateway(hostname=%s) instantiated.", hostname)
         super().__init__()
 
         self._gateway = self
@@ -135,7 +139,7 @@ class Gateway(InComfortObject):
 
         # TODO: how to safely close session if one was created here?
         self._session = session if session else aiohttp.ClientSession()
-        self._timeout = aiohttp.ClientTimeout(total=20)
+        self._timeout = aiohttp.ClientTimeout(total=CLIENT_TIMEOUT)
         if username is None:
             self._url_base = f"http://{hostname}/"
             self._auth = None
@@ -150,6 +154,7 @@ class Gateway(InComfortObject):
         if self._heaters == []:
             url = f"{self._url_base}heaterlist.json"
             heaters = await self._get(url)
+
             self._heaters = [Heater(h, self) for h in heaters["heaterlist"] if h]
 
         self._heaters[0].fake_room = self._fake_room
@@ -161,7 +166,7 @@ class Heater(InComfortObject):
     """Representation of an InComfort Heater."""
 
     def __init__(self, serial_no: str, gateway: Gateway) -> None:
-        _LOGGER.debug("Heater.__init__(serial_no=%s)", serial_no)
+        _LOGGER.debug("Heater(serial_no=%s) instantiated.", serial_no)
         super().__init__()
 
         self._serial_no = serial_no
@@ -186,8 +191,8 @@ class Heater(InComfortObject):
     async def update(self) -> None:
         """Retrieve the Heater's status from the Gateway."""
         url = f"{self._gateway._url_base}data.json?heater={DEFAULT_HEATER_NO}"
-
         self._data = await self._get(url)
+
         self._status = status = {}
 
         for attr in HEATER_ATTRS:
@@ -196,10 +201,7 @@ class Heater(InComfortObject):
         for key in ["nodenr", "rf_message_rssi", "rfstatus_cntr"]:
             status[key] = self._data.get(key)
 
-        _LOGGER.debug("status(heater) = %s", status)
-
-        for room in self.rooms:
-            room._data = self._data  # this is not elegant
+        _LOGGER.debug("Heater(%s).status() = %s", self._serial_no, status)
 
     @property
     def status(self) -> dict:
@@ -283,7 +285,7 @@ class Room(InComfortObject):
     """Representation of an InComfort Room."""
 
     def __init__(self, room_no: int, heater: Heater) -> None:
-        _LOGGER.debug("Room.__init__(room_no=%s)", room_no)
+        _LOGGER.debug("Room(room_no=%s) instantiated.", room_no)
         super().__init__()
 
         self._gateway = heater._gateway
@@ -297,44 +299,47 @@ class Room(InComfortObject):
         """Return the current state of the room."""
         status = {}
 
-        for attr in [ROOM_ATTRS]:
+        for attr in ROOM_ATTRS:
             status[attr] = getattr(self, attr, None)
 
-        _LOGGER.debug("status(room_%s) = %s", self.room_no, status)
+        _LOGGER.debug("Room(%s).status() = %s", self.room_no, status)
         return status
 
     @property
     def room_temp(self) -> Optional[float]:
         """Return the current temperature of the room."""
-        return _value(f"room_temp_{self.room_no}", self._data)
+        return _value(f"room_temp_{self.room_no}", self._heater._data)
 
     @property
     def setpoint(self) -> Optional[float]:
-        """Return the (scheduled?) setpoint temperature of the room."""
-        return _value(f"room_temp_set_{self.room_no}", self._data)
+        """Return the setpoint temperature of the room."""
+        return _value(f"room_temp_set_{self.room_no}", self._heater._data)
 
     @property
     def override(self) -> Optional[float]:
-        """Return the override setpoint temperature of the room."""
-        return _value(f"room_set_ovr_{self.room_no}", self._data)
+        """Return the override temperature of the room."""
+        return _value(f"room_set_ovr_{self.room_no}", self._heater._data)
 
     async def set_override(self, setpoint: float) -> None:
         _LOGGER.debug("Room(%s).set_override(setpoint=%s)", self.room_no, setpoint)
 
-        setpoint = min(max(setpoint, OVERRIDE_MIN_TEMP), OVERRIDE_MAX_TEMP)
-        url = "{}data.json?heater={}&thermostat={}&setpoint={}".format(
-            self._gateway._url_base,
-            DEFAULT_HEATER_NO,
-            int(self.room_no) - 1,
-            int((setpoint - OVERRIDE_MIN_TEMP) * 10),
-        )
+        try:
+            assert OVERRIDE_MIN_TEMP <= setpoint <= OVERRIDE_MAX_TEMP
+        except AssertionError:
+            raise ValueError(
+                "The setpoint is outside of it's valid range, "
+                f"{OVERRIDE_MIN_TEMP}-{OVERRIDE_MAX_TEMP}."
+            )
+
+        setpoint = int((setpoint - OVERRIDE_MIN_TEMP) * 10)
+
+        url = f"{self._gateway._url_base}data.json?heater={DEFAULT_HEATER_NO}"
+        url += f"&thermostat={int(self.room_no) - 1}&setpoint={setpoint}"
         await self._get(url)
 
 
 async def main(loop) -> None:
     import argparse
-
-    _LOGGER.debug("main()")
 
     parser = argparse.ArgumentParser()
 
