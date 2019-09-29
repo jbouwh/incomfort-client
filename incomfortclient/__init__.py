@@ -221,15 +221,18 @@ class Heater(InComfortObject):
         return self._data["displ_code"]
 
     @property
-    def display_text(self) -> str:
-        """Return the display code as a string rather than a number."""
-        _code = self._data["displ_code"]
-        return DISPLAY_CODES.get(_code, f"unknown/other, code = {_code} (fault code?)")
+    def display_text(self) -> Optional[str]:
+        """Return the display code as text rather than a code."""
+        code = self.display_code
+        if code:
+            code_map = FAULT_CODES if self.is_failed else DISPLAY_CODES
+            return code_map.get(code, f"unknown/other, code = '{code}'")
+        return None
 
     @property
-    def fault_code(self) -> int:
-        _code = self._data["displ_code"]
-        return _code if self.is_failed else 0
+    def fault_code(self) -> Optional[int]:
+        """Return the fault code when the heater is in a failed state."""
+        return self._data["displ_code"] if self.is_failed else None
 
     @property
     def is_burning(self) -> bool:
