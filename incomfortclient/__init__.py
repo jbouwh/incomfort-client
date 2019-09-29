@@ -240,20 +240,15 @@ class Heater(InComfortObject):
 
     @property
     def display_code(self) -> int:
-        """Return the display code, displ_code.
-
-        If the heater is in a failed state, this will be the fault_code.
-        """
+        """Return the display code, 'displ_code'."""
         return self._data["displ_code"]
 
     @property
     def display_text(self) -> Optional[str]:
         """Return the display code as text rather than a code."""
         code = self.display_code
-        if code:
-            code_map = FAULT_CODES if self.is_failed else DISPLAY_CODES
-            return code_map.get(code, f"unknown/other, code = '{code}'")
-        return None
+        code_map = FAULT_CODES if self.is_failed else DISPLAY_CODES
+        return code_map.get(code, f"unknown/other, code = '{code}'")
 
     @property
     def fault_code(self) -> Optional[int]:
