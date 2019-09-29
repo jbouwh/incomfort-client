@@ -289,14 +289,7 @@ class Heater(InComfortObject):
     @property
     def serial_no(self) -> str:
         """Return the decoded (not reported) serial number of the heater."""
-        return (
-            str(self._data["serial_year"])
-            + str(self._data["serial_month"])
-            + SERIAL_LINE[self._data["serial_line"]]
-            + str(self._data["serial_sn1"])
-            + str(self._data["serial_sn2"])
-            + str(self._data["serial_sn3"])
-        )  # should be the same as: self._serial_no
+        return self._serial_no
 
     @property
     def rooms(self) -> List[Any]:
