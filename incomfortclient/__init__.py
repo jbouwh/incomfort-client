@@ -42,6 +42,32 @@ DISPLAY_CODES = {
     240: "boiler int.",
     255: "buffer",
 }
+FAULT_CODES = {
+    0: "Sensor fault after self check",
+    1: "Temperature too high",
+    2: "S1 and S2 interchanged",
+    4: "No flame signal",
+    5: "Poor flame signal",
+    6: "Flame detection fault",
+    8: "Incorrect fan speed",
+
+    10: "Sensor fault S1",
+    11: "Sensor fault S1",
+    12: "Sensor fault S1",
+    13: "Sensor fault S1",
+    14: "Sensor fault S1",
+
+    20: "Sensor fault S2",
+    21: "Sensor fault S2",
+    22: "Sensor fault S2",
+    23: "Sensor fault S2",
+    24: "Sensor fault S2",
+
+    27: "Shortcut outside sensor temperature",
+
+    29: "Gas valve relay faulty",
+    30: "Gas valve relay faulty",
+}  # "0.0": "Low system pressure"
 
 HEATER_ATTRS = [
     "display_code",
