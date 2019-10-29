@@ -4,15 +4,15 @@
    Room thermostats.
    """
 
-import asyncio
 import logging
 import random
 from typing import Any, Dict, List, Optional
 
 import aiohttp
 
-DEBUG_MODE = False
-FAKE_ROOM = False
+FAKE_HEATER = True
+FAKE_HEATER_SERIAL = "9901z999999"
+FAKE_ROOM = True
 
 CLIENT_TIMEOUT = 20  # seconds
 
@@ -50,21 +50,17 @@ FAULT_CODES = {
     5: "Poor flame signal",
     6: "Flame detection fault",
     8: "Incorrect fan speed",
-
     10: "Sensor fault S1",
     11: "Sensor fault S1",
     12: "Sensor fault S1",
     13: "Sensor fault S1",
     14: "Sensor fault S1",
-
     20: "Sensor fault S2",
     21: "Sensor fault S2",
     22: "Sensor fault S2",
     23: "Sensor fault S2",
     24: "Sensor fault S2",
-
     27: "Shortcut outside sensor temperature",
-
     29: "Gas valve relay faulty",
     30: "Gas valve relay faulty",
 }  # "0.0": "Low system pressure"
@@ -92,15 +88,6 @@ OVERRIDE_MIN_TEMP = 5.0
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.INFO)
 _LOGGER = logging.getLogger(__name__)
 
-if DEBUG_MODE is True:
-    import ptvsd  # pylint: disable=import-error
-
-    _LOGGER.setLevel(logging.DEBUG)
-    _LOGGER.info("Waiting for debugger to attach...")
-    ptvsd.enable_attach(address=("172.27.0.138", 5679), redirect_output=True)
-    ptvsd.wait_for_attach()
-    _LOGGER.info("Debugger is attached!")
-
 
 # pylint: disable=protected-access, missing-docstring
 
@@ -125,6 +112,10 @@ class InComfortObject:
             "_get(url=%s, auth=%s)", url, "REDACTED" if self._gateway._auth else None
         )
 
+        if url[:17] == "data.json?heater=" and self._serial_no == FAKE_HEATER_SERIAL:
+            url = "data.json?heater=0"
+            _LOGGER.info("heater faked")
+
         async with self._gateway._session.get(
             url=f"{self._gateway._url_base}{url}",
             auth=self._gateway._auth,
@@ -134,7 +125,7 @@ class InComfortObject:
             response = await resp.json(content_type=None)
 
         # if enabled, inject a fake current temperature
-        if "room_temp_2_msb" in response and self._fake_room:
+        if self._fake_room and "room_temp_2_msb" in response:
             temp = 5 + random.randint(0, 8)
             response.update({"room_temp_2_msb": temp})
             response.update({"room_temp_2_lsb": 0})
@@ -153,7 +144,7 @@ class InComfortObject:
 
 
 class Gateway(InComfortObject):
-    """Representation of an InComfort Gateway."""
+    """Representation of an InComfort (Lan2RF) Gateway."""
 
     def __init__(
         self,
@@ -161,12 +152,17 @@ class Gateway(InComfortObject):
         username: str = None,
         password: str = None,
         session: aiohttp.ClientSession = None,
-        fake_room=FAKE_ROOM,
+        debug: bool = False
     ) -> None:
+        if debug is True:
+            _LOGGER.setLevel(logging.DEBUG)
+            _LOGGER.debug("Debug mode is explicitly enabled.")
+
         _LOGGER.debug("Gateway(hostname=%s) instantiated.", hostname)
         super().__init__()
 
         self._gateway = self
+        self._hostname = hostname
         self._heaters: List[Any] = []
 
         # TODO: how to safely close session if one was created here?
@@ -179,49 +175,81 @@ class Gateway(InComfortObject):
             self._url_base = f"http://{hostname}/protect/"
             self._auth = aiohttp.BasicAuth(login=username, password=password)
 
-        self._fake_room = fake_room
+        self._fake_heater: bool = FAKE_HEATER
+
+    @property
+    def fake_heater(self) -> bool:
+        """Is there a fake Heater (for testing)."""
+        return self._fake_room
+
+    @fake_heater.setter
+    def fake_heater(self, value) -> None:
+        """Create a fake Heater (for testing).
+
+        Enable this feature before calling Gateway.heaters().
+        """
+        self._fake_heater = value
+        if self._fake_heater:
+            _LOGGER.warning("Gateway(%s): fake_heater mode is enabled", self._hostname)
 
     @property
     async def heaters(self) -> List[Any]:
-        if self._heaters == []:
-            heaters = await self._get("heaterlist.json")
+        """Retrieve the list of Heaters from the Gateway."""
+        if self._heaters != []:
+            return self._heaters
 
-            self._heaters = [Heater(h, self) for h in heaters["heaterlist"] if h]
+        heaters = dict(await self._get("heaterlist.json"))['heaterlist']
 
-        self._heaters[0].fake_room = self._fake_room
+        if self._fake_heater:
+            serial_no = heaters[1] = FAKE_HEATER_SERIAL
+            _LOGGER.warning("Heater(%s): fake_heater was created", serial_no)
 
+        self._heaters = [
+            Heater(h, idx, self) for idx, h in enumerate(heaters) if h
+        ]
+
+        _LOGGER.debug("Gateway(%s).heaters() = %s", self._hostname, heaters)
         return self._heaters
 
 
 class Heater(InComfortObject):
-    """Representation of an InComfort Heater."""
+    """Representation of an InComfort Heater (aka boiler)."""
 
-    def __init__(self, serial_no: str, gateway: Gateway) -> None:
+    def __init__(self, serial_no: str, idx: int, gateway: Gateway) -> None:
         _LOGGER.debug("Heater(serial_no=%s) instantiated.", serial_no)
         super().__init__()
 
         self._serial_no = serial_no
+        self._heater_idx = idx
         self._gateway = gateway
 
         self._data: Dict[str, Any] = {}
         self._status: Dict[str, Any] = {}
-        self._fake_room = False
         self._rooms: list = []
+
+        self._fake_room: bool = FAKE_ROOM
+
+    # def __repr__(self) -> str:
+    #     return self._status
 
     @property
     def fake_room(self) -> bool:
-        """Create a fake room (for testing)."""
+        """Is there a fake Room (for testing)."""
         return self._fake_room
 
     @fake_room.setter
     def fake_room(self, value) -> None:
+        """Create a fake Room (for testing).
+
+        Enable this feature before calling Heater.update().
+        """
         self._fake_room = value
         if self._fake_room:
             _LOGGER.warning("Heater(%s): fake_room mode is enabled", self._serial_no)
 
     async def update(self) -> None:
-        """Retrieve the Heater's status from the Gateway."""
-        self._data = await self._get(f"data.json?heater={DEFAULT_HEATER_NO}")
+        """Retrieve the Heater's latest status from the Gateway."""
+        self._data = await self._get(f"data.json?heater={self._heater_idx}")
 
         self._status = status = {}
 
@@ -352,7 +380,7 @@ class Room(InComfortObject):
                 f"{OVERRIDE_MIN_TEMP}-{OVERRIDE_MAX_TEMP}."
             )
 
-        url = "data.json?heater={DEFAULT_HEATER_NO}"
+        url = "data.json?heater={self._heater._heater_idx}"
         url += f"&thermostat={int(self.room_no) - 1}"
         url += f"&setpoint={int((setpoint - OVERRIDE_MIN_TEMP) * 10)}"
         await self._get(url)
@@ -425,10 +453,3 @@ async def main(loop) -> None:
             for room in heater.rooms:
                 status[f"room_{room.room_no}"] = room.status
             print(status)
-
-
-# called from CLI?
-if __name__ == "__main__":  # called from CLI?
-    LOOP = asyncio.get_event_loop()
-    LOOP.run_until_complete(main(LOOP))
-    LOOP.close()
