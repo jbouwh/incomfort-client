@@ -238,9 +238,6 @@ class Heater(InComfortObject):
         self.__fake_room = None
         self._fake_room: bool = FAKE_ROOM if self._serial_no == FAKE_HEATER_SERIAL else False
 
-    # def __repr__(self) -> str:
-    #     return self._status
-
     @property
     def _fake_room(self) -> bool:
         """Is there a fake Room (for testing)."""
