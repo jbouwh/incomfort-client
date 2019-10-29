@@ -10,14 +10,16 @@ import logging
 
 import aiohttp
 
-from incomfortclient import Gateway as InComfortGateway
+from incomfortclient import Gateway
 
 logging.basicConfig(
-    datefmt="%H:%M:%S", format="%(asctime)s %(levelname)-8s: %(message)s"
+    datefmt="%H:%M:%S",
+    format="%(asctime)s %(levelname)-8s: %(message)s",
+    level=logging.WARNING,
 )
 _LOGGER = logging.getLogger(__name__)
 
-DEBUG_MODE = True
+DEBUG_MODE = False
 
 if DEBUG_MODE is True:
     import ptvsd  # pylint: disable=import-error
@@ -33,9 +35,7 @@ DEFAULT_HEATER_NO = 0
 DEFAULT_ROOM_NO = 2
 
 
-async def main(loop):
-    """Return the JSON as requested."""
-
+def _parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("gateway", help="hostname/address of the InComfort gateway")
@@ -69,11 +69,23 @@ async def main(loop):
 
     if bool(args.username) ^ bool(args.password):
         parser.error("--username and --password must be given together, or not at all")
+        return None
+
+    return args
+
+
+async def main(loop):
+    """Return the JSON as requested."""
+
+    args = _parse_args()
+
+    if not args:
+        return False
 
     # session is optional, but without it: ERROR: Unclosed client session
     session = aiohttp.ClientSession()
 
-    gateway = InComfortGateway(
+    gateway = Gateway(
         args.gateway,
         session=session,
         username=args.username,
@@ -81,24 +93,23 @@ async def main(loop):
         debug=DEBUG_MODE,
     )
 
-    # gateway.fake_heater = True
+    # gateway._fake_heater = True
     try:
-        heaters = await gateway.heaters
+        heaters = list(await gateway.heaters)
     except aiohttp.ClientResponseError as err:
         _LOGGER.warning("Setup failed, check your configuration, message is: %s", err)
         await session.close()
-        return
+        return False
 
-    for heater in heaters:
-        # heater.fake_room = True
-        await heater.update()
-
-        # print(f"Raw JSON = {heater._data}")
-        print(f"Status = {heater.status}")
-        print(f"Display = {heater.display_code}({heater.display_text})")
-        print(f"Fault code = {heater.fault_code}")
+    # for heater in heaters:  # TODO: deleteme
+    #     await heater.update()
+    #     print(f"Status = {heater.status}")
+    #     print(f"Display = {heater.display_code}({heater.display_text})")
+    #     print(f"Fault code = {heater.fault_code}\r\n")
 
     heater = heaters[DEFAULT_HEATER_NO]
+    # heater._fake_room = True
+    await heater.update()
 
     if args.temp:
         try:

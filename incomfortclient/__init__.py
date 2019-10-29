@@ -10,20 +10,32 @@ from typing import Any, Dict, List, Optional
 
 import aiohttp
 
-from .const import (BITMASK_BURNER, BITMASK_FAIL, BITMASK_PUMP, BITMASK_TAP,
-                    CLIENT_TIMEOUT, DISPLAY_CODES, FAULT_CODES, HEATER_ATTRS,
-                    INVALID_VALUE, OVERRIDE_MAX_TEMP, OVERRIDE_MIN_TEMP,
-                    ROOM_ATTRS)
+from .const import (
+    BITMASK_BURNER,
+    BITMASK_FAIL,
+    BITMASK_PUMP,
+    BITMASK_TAP,
+    CLIENT_TIMEOUT,
+    DISPLAY_CODES,
+    FAULT_CODES,
+    HEATER_ATTRS,
+    INVALID_VALUE,
+    OVERRIDE_MAX_TEMP,
+    OVERRIDE_MIN_TEMP,
+    ROOM_ATTRS,
+)
 
-FAKE_HEATER = True
+FAKE_HEATER = False
 FAKE_HEATER_INDEX = 1
 FAKE_HEATER_SERIAL = "9901z999999"
 
-FAKE_ROOM = True
+FAKE_ROOM = False
 FAKE_ROOM_NUMBER = 2  # only 1 or 2
 
 logging.basicConfig(
-    datefmt="%H:%M:%S", format="%(asctime)s %(levelname)-8s: %(message)s", level=logging.INFO
+    datefmt="%H:%M:%S",
+    format="%(asctime)s %(levelname)-8s: %(message)s",
+    level=logging.WARNING,
 )
 _LOGGER = logging.getLogger(__name__)
 
