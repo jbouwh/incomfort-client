@@ -2,7 +2,7 @@
 
 # incomfort-client
 
-Python client library for **Intergas boilers** accesible via a **Lan2RF gateway** by abstracting its HTTP API. It includes a basic CLI to demonstrate how to use the library.  
+Python client library for **Intergas boilers** accesible via a **Lan2RF gateway** by abstracting its HTTP API. It includes a basic CLI to demonstrate how to use the library.
 
 This library was previously called **intouch-client**, as it is known in the UK as **InTouch**, but in mainland Europe (especially the Netherlands, where is it popular) it is known as **Incomfort**.
 
@@ -29,27 +29,27 @@ Where possible, it uses uses the same methods and properties as **bwesterb/incom
 ### Basic CLI included
 There is a very basic CLI (this output has been formatted for readability):
 ```bash
-(venv) root@hostname:~/$ python incomfortclient/__init__.py ${HOSTNAME}
+(venv) root@hostname:~/$ python inclient.py ${HOSTNAME}
 {
-  'display_code': 126, 
-  'display_text': 'standby', 
-  'fault_code': 0, 
-  
-  'is_burning': False, 
+  'display_code': 126,
+  'display_text': 'standby',
+  'fault_code': 0,
+
+  'is_burning': False,
   'is_failed': False,
-  'is_pumping': False, 
-  'is_tapping': False, 
-  
-  'heater_temp': 31.22, 
-  'tap_temp': 27.91, 
-  'pressure': 1.23, 
-  'serial_no': '175t23072', 
-  
-  'nodenr': 200, 
-  'rf_message_rssi': 38, 
-  'rfstatus_cntr': 0, 
-  
-  'room_1': {'room_temp': 26.4, 'setpoint': 19.5, 'override': 19.5}, 
+  'is_pumping': False,
+  'is_tapping': False,
+
+  'heater_temp': 31.22,
+  'tap_temp': 27.91,
+  'pressure': 1.23,
+  'serial_no': '175t23072',
+
+  'nodenr': 200,
+  'rf_message_rssi': 38,
+  'rfstatus_cntr': 0,
+
+  'room_1': {'room_temp': 26.4, 'setpoint': 19.5, 'override': 19.5},
   'room_2': {'room_temp': None, 'setpoint': None, 'override': 19.0}
 }
 ```
@@ -59,14 +59,14 @@ QA includes comparing JSON from **cURL** with output from this app using **diff*
 ```bash
 (venv) root@hostname:~/$ curl -X GET http://${HOSTNAME}/data.json?heater=0 | \
     python -c "import sys, json; print(json.load(sys.stdin))" > a.out
-    
-(venv) root@hostname:~/$ python incomfortclient/__init__.py ${HOSTNAME} --raw > b.out
+
+(venv) root@hostname:~/$ python inclient.py ${HOSTNAME} --raw > b.out
 
 (venv) root@hostname:~/$ diff a.out b.out
 ```
 Newer versions of the gateway require authentication:
 ```bash
-(venv) root@hostname:~/$ python incomfortclient/__init__.py ${HOSTNAME} -u ${USER} -p ${PASS}
+(venv) root@hostname:~/$ python inclient.py ${HOSTNAME} -u ${USER} -p ${PASS}
 
 (venv) root@hostname:~/$ curl --user ${USER}:${PASS} -X GET http://${HOSTNAME}/protect/data.json?heater=0
 ```
