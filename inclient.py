@@ -1,8 +1,8 @@
 """Python client library for the InterGas InComfort system (via Lan2RF gateway).
 
-   Each Gateway can have up to 8 Heaters (boilers) and each Heater can have 0-2
-   Room thermostats.
-   """
+Each Gateway can have up to 8 Heaters (boilers) and each Heater can have 0-2
+Room thermostats.
+"""
 
 import argparse
 import asyncio
@@ -20,16 +20,21 @@ logging.basicConfig(
 _LOGGER = logging.getLogger(__name__)
 
 DEBUG_MODE = False
+DEBUG_ADDR = "0.0.0.0"
+DEBUG_PORT = 5678
 
 if DEBUG_MODE is True:
-    import ptvsd  # pylint: disable=import-error
+    import debugpy
 
     _LOGGER.setLevel(logging.DEBUG)
-    _LOGGER.info("Waiting for debugger to attach...")
-    ptvsd.enable_attach(address=("172.27.0.138", 5679))
 
-    ptvsd.wait_for_attach()
-    _LOGGER.info("Debugger is attached!")
+    debugpy.listen(address=(DEBUG_ADDR, DEBUG_PORT))
+    print(f"Debugging is enabled, listening on: {DEBUG_ADDR}:{DEBUG_PORT}.")
+    print(" - execution paused, waiting for debugger to attach...")
+
+    debugpy.wait_for_client()
+    print(" - debugger is now attached, continuing execution.")
+
 
 DEFAULT_HEATER_NO = 0
 DEFAULT_ROOM_NO = 2

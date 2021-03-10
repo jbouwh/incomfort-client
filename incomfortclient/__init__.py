@@ -1,8 +1,8 @@
 """Python client library for the InterGas InComfort system (via Lan2RF gateway).
 
-   Each Gateway can have up to 8 Heaters (boilers) and each Heater can have 0-2
-   Room thermostats.
-   """
+Each Gateway can have up to 8 Heaters (boilers) and each Heater can have 0-2
+Room thermostats.
+"""
 
 import logging
 import random
@@ -236,7 +236,9 @@ class Heater(InComfortObject):
         self._rooms: list = []
 
         self.__fake_room = None
-        self._fake_room: bool = FAKE_ROOM if self._serial_no == FAKE_HEATER_SERIAL else False
+        self._fake_room: bool = (
+            FAKE_ROOM if self._serial_no == FAKE_HEATER_SERIAL else False
+        )
 
     @property
     def _fake_room(self) -> bool:
