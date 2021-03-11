@@ -1,54 +1,59 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+#
 """The setup.py file."""
 
 import os
-from setuptools import find_packages, setup
-from setuptools.command.install import install
 import sys
 
-VERSION = "0.4.5"
-
-with open("README.md", "r") as fh:
-    long_description = fh.read()
+from setuptools import find_packages, setup
+from setuptools.command.install import install
 
 
 class VerifyVersionCommand(install):
-    """Custom command to verify that the git tag matches our version."""
-
-    description = "verify that the git tag matches our version"
+    """Custom command to verify that the git tag matches our VERSION."""
 
     def run(self):
         tag = os.getenv("CIRCLE_TAG")
-
         if tag != VERSION:
-            info = "Git tag: {0} does not match the version of this app: {1}".format(
-                tag, VERSION
-            )
+            info = "Git tag: {tag} does not match the version of this pkg: {VERSION}"
             sys.exit(info)
+
+
+with open("incomfortclient/__init__.py") as fh:
+    for line in fh:
+        if line.strip().startswith("__version__"):
+            VERSION = eval(line.split("=")[-1])
+            break
+
+
+with open("README.md", "r") as fh:
+    LONG_DESCRIPTION = fh.read()
 
 
 setup(
     name="incomfort-client",
-    version=VERSION,
-    author="David Bonnes",
-    author_email="zxdavb@bonnes.me",
     description="An aiohttp-based client for Intergas InComfort/InTouch Lan2RF systems",
     keywords=["intergas", "incomfort", "intouch", "lan2rf"],
-    long_description=long_description,
-    long_description_content_type="text/markdown",
+    author="David Bonnes",
+    author_email="zxdavb@bonnes.me",
     url="https://github.com/zxdavb/incomfort-client",
-    download_url="https://github.com/zxdavb/incomfort-client/archive/VERSION.tar.gz",
+    download_url="{url}/archive/{VERSION}.tar.gz",
+    install_requires=[list(val.strip() for val in open("requirements.txt"))],
+    long_description=LONG_DESCRIPTION,
+    long_description_content_type="text/markdown",
+    packages=find_packages(exclude=["test", "docs"]),
+    version=VERSION,
     license="MIT",
-    packages=find_packages(),
-    install_requires=["aiohttp"],
+    python_requires=">=3.7",
+    classifiers=[
+        "Development Status :: 5 - Production/Stable",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
+        "Programming Language :: Python :: 3.8",
+        "Topic :: Home Automation",
+    ],
     cmdclass={
         "verify": VerifyVersionCommand,
     },
-    classifiers=[
-        "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: MIT License",
-        "Operating System :: OS Independent",
-        "Development Status :: 5 - Production/Stable",
-    ],
 )

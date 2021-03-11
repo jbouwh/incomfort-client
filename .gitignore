@@ -1,6 +1,11 @@
 ### .gitignore file for https://github.com/zxdavb
 
+*.bkp
+*.db
+*.exe
 *.json
+*.log
+*.old
 *.out
 *.txt
 

@@ -10,6 +10,8 @@ from typing import Any, Dict, List, Optional
 
 import aiohttp
 
+__version__ = "0.4.5"
+
 FAKE_HEATER = False
 FAKE_HEATER_INDEX = 1
 FAKE_HEATER_SERIAL = "9901z999999"
