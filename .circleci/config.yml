@@ -85,7 +85,7 @@ jobs:
           path: /tmp/test-results
           destination: devices_summary
 
-  lint:
+  check_lint:
     docker:
       - image: circleci/python:3.7.5
     steps:
@@ -116,12 +116,15 @@ jobs:
     steps:
       - checkout
       - run:
-          command: sudo pip install twine
+          name: Install dependencies
+          command: |
+            pip install -r requirements.txt
+            sudo pip install twine
       - run:
           name: Verify git tag vs. package version
           command: python setup.py verify
       - run:
-          name: Build the  package
+          name: Build the package
           command: |
             python setup.py sdist        # create a source distribution
             python setup.py bdist_wheel  # create a wheel
@@ -147,6 +150,7 @@ jobs:
           name: Upload to PyPi
           command: twine upload -r pypi dist/*
 
+
 workflows:
   version: 2
 
@@ -156,7 +160,7 @@ workflows:
           filters: # required since `deploy` has tag filters AND requires `build`
             tags:
               only: /.*/
-      - lint:
+      - check_lint:
           requires:
             - build
           filters: # required since `deploy` has tag filters AND requires `build`
@@ -165,7 +169,7 @@ workflows:
       - deploy:
           requires:
             - build
-            - lint
+            - check_lint
           filters:
             tags:
               only: /[0-9]+(\.[0-9]+)*/
