@@ -10,11 +10,13 @@ from typing import Any, Dict, List, Optional
 
 import aiohttp
 
-__version__ = "0.4.5"
+__version__ = "0.4.6"
 
 FAKE_HEATER = False
 FAKE_HEATER_INDEX = 1
 FAKE_HEATER_SERIAL = "9901z999999"
+
+BAD_HEATER_SERIAL = "000W00000"
 
 FAKE_ROOM = False
 FAKE_ROOM_NUMBER = 2  # only 1 or 2
@@ -83,7 +85,7 @@ HEATER_ATTRS = [
     "pressure",
     "serial_no",
 ]
-ROOM_ATTRS = ["room_temp", "setpoint", "override"]
+ROOM_ATTRS = ("room_temp", "setpoint", "override")
 
 OVERRIDE_MAX_TEMP = 30.0
 OVERRIDE_MIN_TEMP = 5.0
@@ -205,10 +207,10 @@ class Gateway(InComfortObject):
                 FAKE_HEATER_SERIAL,
             )
 
-    @property
-    async def heaters(self) -> List[Any]:
+    # FIXME CC: heaters = incomfort_data["heaters"] = list(await client.heaters())
+    async def heaters(self, force_refresh: bool = None) -> List[Any]:
         """Retrieve the list of Heaters from the Gateway."""
-        if self._heaters != []:
+        if self._heaters and not force_refresh:
             return self._heaters
 
         heaters = dict(await self._get("heaterlist.json"))["heaterlist"]
