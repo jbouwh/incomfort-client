@@ -45,7 +45,7 @@ setup(
     packages=find_packages(exclude=["test", "docs"]),
     version=VERSION,
     license="MIT",
-    python_requires=">=3.7",
+    python_requires=">=3.10",
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "License :: OSI Approved :: MIT License",
