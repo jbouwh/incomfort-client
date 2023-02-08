@@ -72,7 +72,7 @@ FAULT_CODES = {
     30: "Gas valve relay faulty",
 }  # "0.0": "Low system pressure"
 
-HEATER_ATTRS = [
+HEATER_ATTRS = (
     "display_code",
     "display_text",
     "fault_code",
@@ -84,7 +84,9 @@ HEATER_ATTRS = [
     "tap_temp",
     "pressure",
     "serial_no",
-]
+)
+HEATER_ATTRS_RAW = ("nodenr", "rf_message_rssi", "rfstatus_cntr")
+
 ROOM_ATTRS = ("room_temp", "setpoint", "override")
 
 OVERRIDE_MAX_TEMP = 30.0
@@ -272,7 +274,7 @@ class Heater(InComfortObject):
         for attr in HEATER_ATTRS:
             status[attr] = getattr(self, attr, None)
 
-        for key in ["nodenr", "rf_message_rssi", "rfstatus_cntr"]:
+        for key in HEATER_ATTRS_RAW:
             status[key] = self._data.get(key)
 
         _LOGGER.debug("Heater(%s).status() = %s", self._serial_no, status)
@@ -340,7 +342,7 @@ class Heater(InComfortObject):
         if self._rooms == []:
             self._rooms = [
                 Room(r, self)
-                for r in [1, 2]
+                for r in (1, 2)
                 if _value(f"room_temp_{r}", self._data) is not None
             ]
         return self._rooms
