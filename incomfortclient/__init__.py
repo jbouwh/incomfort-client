@@ -26,7 +26,7 @@ CLIENT_TIMEOUT = 20  # seconds
 INVALID_VALUE = (2 ** 15 - 1) / 100.0  # 127 * 256 + 255 = 327.67
 SERIAL_LINE = "0123456789abcdefghijklmnopqrstuvwxyz"
 
-# key label: IO
+# key label: IO (is a bitmask)
 BITMASK_BURNER = 0x08  # burner state: on / off
 BITMASK_FAIL = 0x01  # failure state: on / off (aka lockout)
 BITMASK_PUMP = 0x02  # pump state: on / off
