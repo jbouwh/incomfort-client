@@ -16,7 +16,7 @@ FAKE_HEATER = False
 FAKE_HEATER_INDEX = 1
 FAKE_HEATER_SERIAL = "9901z999999"
 
-BAD_HEATER_SERIAL = "000W00000"
+NULL_HEATER_SERIAL = "000W00000"
 
 FAKE_ROOM = False
 FAKE_ROOM_NUMBER = 2  # only 1 or 2
@@ -220,7 +220,11 @@ class Gateway(InComfortObject):
         if self._fake_heater:
             heaters[FAKE_HEATER_INDEX] = FAKE_HEATER_SERIAL
 
-        self._heaters = [Heater(h, idx, self) for idx, h in enumerate(heaters) if h]
+        self._heaters = [
+            Heater(h, idx, self)
+            for idx, h in enumerate(heaters)
+            if h and h != NULL_HEATER_SERIAL
+        ]
 
         _LOGGER.debug("Gateway(%s).heaters() = %s", self._hostname, heaters)
         return self._heaters
