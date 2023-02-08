@@ -4,7 +4,7 @@
 """Python client library for the InterGas InComfort system (via Lan2RF gateway).
 
 Each Gateway can have up to 8 Heaters (boilers) and each Heater can have 0-2
-Room thermostats.
+active Room thermostats.
 """
 
 from __future__ import annotations
