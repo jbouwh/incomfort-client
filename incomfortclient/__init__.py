@@ -135,8 +135,8 @@ class InComfortObject:
 
         # if enabled, inject a fake current temperature
         if url[:17] == "data.json?heater=" and self._fake_room:
-            temp = 5 + random.randint(0, 8)
-            response.update({f"room_temp_{FAKE_ROOM_NUMBER}_msb": temp})
+            tmp = 5 + random.randint(0, 8)
+            response.update({f"room_temp_{FAKE_ROOM_NUMBER}_msb": tmp})
             response.update({f"room_temp_{FAKE_ROOM_NUMBER}_lsb": 0})
 
             response.update({f"room_temp_set_{FAKE_ROOM_NUMBER}_msb": 7})
