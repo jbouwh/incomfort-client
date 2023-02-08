@@ -338,7 +338,7 @@ class Heater(InComfortObject):
 
     @property
     def serial_no(self) -> str:
-        """Return the decoded (not reported) serial number of the heater."""
+        """Return the reported (not decoded) serial number of the heater."""
         return self._serial_no
 
     @property
