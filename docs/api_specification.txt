@@ -1,14 +1,16 @@
-HTTP interface lan2rf gateway
+HTTP interface InterGas LAN2RF gateway
 
 1. Retrieve the Device List (Description, Response)
 
-    Request a list of devices from the gateway.
+  Request a list of heaters (boilers) from the gateway (no authentication):
 
-    Href = <ip address> /heaterlist.json
-    Method = GET
+    curl -X GET http://${HOSTNAME}/heaterlist.json
 
-Response:
-    Format: json
+  NB: for newer gateways, use basic authentication and insert /protect/ into the URL:
+
+    curl -X GET http://${HOSTNAME}/protect/heaterlist.json --user ${USERNAME}:${PASSWORD}
+
+  Response (JSON):
     {
         "heaterlist":
         [
@@ -25,13 +27,16 @@ Response:
 
 
 2. Collect Boiler Status (Description, Response)
-    Retrieve status data per boiler.
 
-    Href = <ip address> /data.json?heater= <nr>
-    Method = GET
+  Retrieve status data per boiler.:
 
-Response:
-    Format: json
+    curl -X GET http://${HOSTNAME}/data.json?heater=<idx>
+
+  NB: for newer gateways, use basic authentication and insert /protect/ into the URL:
+
+    curl -X GET http://${HOSTNAME}/protect/data.json?heater=<idx> --user ${USERNAME}:${PASSWORD}
+
+  Response (JSON):
     {
         "nodenr":               <value>,
         "ch_temp_lsb":          <value>,
@@ -64,22 +69,22 @@ Response:
         "rfstatus_cntr":        <value>
     }
 
-Label Description
-    ch_temp_lsb         -- CV supply temperature lsb (lsb = least significant byte) *
-    ch_temp_msb         -- CV supply temperature msb (msb = most significant byte) *
-    tap_temp_lsb        -- Hot water temperature lsb *
-    tap_temp_msb        -- Hot water temperature msb *
-    ch_pressure_lsb     -- CV water pressure lsb **
-    ch_pressure_msb     -- CV water pressure msb **
+  Label Description
+    ch_temp_lsb         -- CV supply temperature lsb (lsb = least significant byte) (*1)
+    ch_temp_msb         -- CV supply temperature msb (msb = most significant byte) (*1)
+    tap_temp_lsb        -- Hot water temperature lsb (*1)
+    tap_temp_msb        -- Hot water temperature msb (*1)
+    ch_pressure_lsb     -- CV water pressure lsb (*2)
+    ch_pressure_msb     -- CV water pressure msb (*2)
 
-    room_temp_1_lsb     -- Measured temperature Room thermostat 1 lsb *
-    room_temp_1_msb     -- Measured temperature Room thermostat 1 msb *
-    room_temp_set_1_lsb -- Set temperature Room thermostat 1 lsb *
-    room_temp_set_1_msb -- Set temperature Room thermostat 1 msb *
-    room_temp_2_lsb     -- Measured temperature Room thermostat 2 lsb *
-    room_temp_2_msb     -- Measured temperature Room thermostat 2 msb *
-    room_temp_set_2_lsb -- Set temperature Room thermostat 2 lsb *
-    room_temp_set_2_msb -- Set temperature Room thermostat 2 msb *
+    room_temp_1_lsb     -- Measured temperature Room thermostat 1 lsb (*1)
+    room_temp_1_msb     -- Measured temperature Room thermostat 1 msb (*1)
+    room_temp_set_1_lsb -- Set temperature Room thermostat 1 lsb (*1)
+    room_temp_set_1_msb -- Set temperature Room thermostat 1 msb (*1)
+    room_temp_2_lsb     -- Measured temperature Room thermostat 2 lsb (*1)
+    room_temp_2_msb     -- Measured temperature Room thermostat 2 msb (*1)
+    room_temp_set_2_lsb -- Set temperature Room thermostat 2 lsb (*1)
+    room_temp_set_2_msb -- Set temperature Room thermostat 2 msb (*1)
 
     serial_year         -- Serial number year
     serial_month        -- Serial number month
@@ -88,17 +93,17 @@ Label Description
     serial_sn2          -- Serial number sequence no2
     serial_sn3          -- Serial number sequence no3
 
-    room_set_ovr_1_msb  -- Remote set temperature Room thermostat 1 lsb *
-    room_set_ovr_1_lsb  -- Remote set temperature Room thermostat 1 msb *
-    room_set_ovr_2_msb  -- Remote set temperature Room thermostat 2 lsb *
-    room_set_ovr_2_lsb  -- Remote set temperature Room thermostat 2 msb *
+    room_set_ovr_1_msb  -- Remote set temperature Room thermostat 1 lsb (*1)
+    room_set_ovr_1_lsb  -- Remote set temperature Room thermostat 1 msb (*1)
+    room_set_ovr_2_msb  -- Remote set temperature Room thermostat 2 lsb (*1)
+    room_set_ovr_2_lsb  -- Remote set temperature Room thermostat 2 msb (*1)
 
     nodenr              -- RF node number
     rf_message_rssi     -- RF strength
     rfstatus_cntr       -- Internal value RF
 
-Label: IO
-    bit 0 =  failure on / off ***
+  Label: IO
+    bit 0 =  failure on / off (*3)
     bit 1 =     pump on / off
     bit 2 = tap f(x) on / off (tap function)
     bit 3 =   burner on / off
@@ -107,7 +112,7 @@ Label: IO
     bit 6 = -
     bit 7 = -
 
-Label: displ_code ***
+  Label: displ_code (*3)
       0 = 'opentherm'
      15 = 'boiler ext.'
      24 = 'frost'
@@ -123,9 +128,10 @@ Label: displ_code ***
     240 = 'boiler int.'
     255 = 'buffer'
 
-      * temperature (°C)  = (value_lsb   + value_msb   * 256) / 100.0
-     ** CV pressure (bar) = (ch_temp_lsb + ch_temp_msb * 256) / 100
-    *** If failure on / off (IO [0]) = 1, the fault code is: <displ_code>.
+  Notes:
+    *1: temperature (°C)  = (value_lsb   + value_msb   * 256) / 100.0
+    *2: CV pressure (bar) = (ch_temp_lsb + ch_temp_msb * 256) / 100
+    *3: If failure on / off (IO [0]) = 1, the fault code is: <displ_code>.
 
     Building serial number: <serial_year> <serial_month> <mont. line> <serial_sn1> <serial_sn2> <serial_sn3>
       <mont. line> = "0123456789abcdefghijklmnopqrstuvwxyz" index = <serial_line>
@@ -133,26 +139,25 @@ Label: displ_code ***
 
 3. Change Thermostat Set Point (Description)
 
-    Set thermostat set point.
+  Set thermostat set point.
 
-    Href = <ip address> /data.json?heater= <nr> & setpoint = <setpoint> & thermostat = <thermostat>
-    Method = GET
+    GET <ip address>/data.json?heater=<nr>&setpoint=<setpoint>&thermostat=<thermostat>
 
 
-4. Examples of calculations:
+4. Examples of Calculations:
 
-    Calculation set point (Response, Example)
-        Tg = Desired temperature in ° C
-        setpoint = (Tg - 5) * 10
+  Calculation set point (Response, Example)
+    Tg = Desired temperature in ° C
+    setpoint = (Tg - 5) * 10
 
-    Response:
-        Same as with GET <ip address> /data.json
+  Response:
+    Same as with GET <ip address> /data.json
 
-    Example:
-        Set room thermostat to 20 ° C:
-        boiler number: 1
-        thermostat number: 1
-        The gateway has the ip address: 192.168.1.145
-        setpoint calculation: (20 - 5) * 10 = 150
+  Example:
+    Set room thermostat to 20 ° C:
+    boiler number: 1
+    thermostat number: 1
+    The gateway has the ip address: 192.168.1.145
+    setpoint calculation: (20 - 5) * 10 = 150
 
-        GET http://192.168.1.145/data.json?heater=1&setpoint=150&thermostat=1
+    GET http://192.168.1.145/data.json?heater=1&setpoint=150&thermostat=1
