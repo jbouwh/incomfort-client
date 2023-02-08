@@ -7,9 +7,10 @@ Each Gateway can have up to 8 Heaters (boilers) and each Heater can have 0-2
 Room thermostats.
 """
 
+from __future__ import annotations
+
 import logging
 import random
-from typing import Any, Dict, List, Optional
 
 import aiohttp
 
@@ -36,7 +37,7 @@ BITMASK_PUMP = 0x02  # pump state: on / off
 BITMASK_TAP = 0x04  # tap (DHW) state: function on / off
 
 # key label: displ_code
-DISPLAY_CODES = {
+DISPLAY_CODES: list[int, str] = {
     0: "opentherm",
     15: "boiler ext.",
     24: "frost",
@@ -52,7 +53,7 @@ DISPLAY_CODES = {
     240: "boiler int.",
     255: "buffer",
 }
-FAULT_CODES = {
+FAULT_CODES: list[int, str] = {
     0: "Sensor fault after self check",
     1: "Temperature too high",
     2: "S1 and S2 interchanged",
@@ -75,7 +76,7 @@ FAULT_CODES = {
     30: "Gas valve relay faulty",
 }  # "0.0": "Low system pressure"
 
-HEATER_ATTRS = (
+HEATER_ATTRS: tuple[str] = (
     "display_code",
     "display_text",
     "fault_code",
@@ -88,9 +89,9 @@ HEATER_ATTRS = (
     "pressure",
     "serial_no",
 )
-HEATER_ATTRS_RAW = ("nodenr", "rf_message_rssi", "rfstatus_cntr")
+HEATER_ATTRS_RAW: tuple[str] = ("nodenr", "rf_message_rssi", "rfstatus_cntr")
 
-ROOM_ATTRS = ("room_temp", "setpoint", "override")
+ROOM_ATTRS: tuple[str] = ("room_temp", "setpoint", "override")
 
 OVERRIDE_MAX_TEMP = 30.0
 OVERRIDE_MIN_TEMP = 5.0
@@ -105,7 +106,7 @@ _LOGGER = logging.getLogger(__name__)
 # pylint: disable=protected-access, missing-docstring
 
 
-def _value(key_stub: str, data_dict: dict) -> Optional[float]:
+def _value(key_stub: str, data_dict: dict) -> None | float:
     def _convert(most_significant_byte: int, least_significant_byte: int) -> float:
         return (most_significant_byte * 256 + least_significant_byte) / 100.0
 
@@ -119,7 +120,7 @@ class InComfortObject:
     def __init__(self) -> None:
         self._gateway: Gateway = None
         self._fake_room: bool = None
-        self._serial_no = None  # used by heaters only
+        self._serial_no: None | str = None  # used by heaters only
 
     async def _get(self, url: str):
         _LOGGER.debug(
@@ -178,7 +179,7 @@ class Gateway(InComfortObject):
 
         self._gateway = self
         self._hostname = hostname
-        self._heaters: List[Any] = []
+        self._heaters: list[Heater] = []
 
         # TODO: how to safely close session if one was created here?
         self._session = session if session else aiohttp.ClientSession()
@@ -213,7 +214,7 @@ class Gateway(InComfortObject):
             )
 
     # FIXME CC: heaters = incomfort_data["heaters"] = list(await client.heaters())
-    async def heaters(self, force_refresh: bool = None) -> List[Any]:
+    async def heaters(self, force_refresh: bool = None) -> list[Heater]:
         """Retrieve the list of Heaters from the Gateway."""
         if self._heaters and not force_refresh:
             return self._heaters
@@ -240,13 +241,13 @@ class Heater(InComfortObject):
         _LOGGER.debug("Heater(serial_no=%s) instantiated.", serial_no)
         super().__init__()
 
-        self._serial_no = serial_no
-        self._heater_idx = idx
-        self._gateway = gateway
+        self._serial_no: str = serial_no
+        self._heater_idx: int = idx
+        self._gateway: Gateway = gateway
 
-        self._data: Dict[str, Any] = {}
-        self._status: Dict[str, Any] = {}
-        self._rooms: list = None
+        self._data: dict = {}
+        self._status: dict = {}
+        self._rooms: list[Room] = None
 
         self.__fake_room = None
         self._fake_room: bool = (
@@ -297,14 +298,14 @@ class Heater(InComfortObject):
         return self._data["displ_code"]
 
     @property
-    def display_text(self) -> Optional[str]:
+    def display_text(self) -> None | str:
         """Return the display code as text rather than a code."""
         code = self.display_code
         code_map = FAULT_CODES if self.is_failed else DISPLAY_CODES
         return code_map.get(code, f"unknown/other, code = '{code}'")
 
     @property
-    def fault_code(self) -> Optional[int]:
+    def fault_code(self) -> None | int:
         """Return the fault code when the heater is in a failed state."""
         return self._data["displ_code"] if self.is_failed else None
 
@@ -345,7 +346,7 @@ class Heater(InComfortObject):
         return self._serial_no
 
     @property
-    def rooms(self) -> List[Any]:
+    def rooms(self) -> list[Room]:
         if self._rooms is None:
             self._rooms = [
                 Room(r, self)
@@ -369,7 +370,7 @@ class Room(InComfortObject):
         self.room_no = room_no
 
     @property
-    def status(self) -> Dict[str, Any]:
+    def status(self) -> dict:
         """Return the current state of the room."""
         status = {}
 
@@ -380,17 +381,17 @@ class Room(InComfortObject):
         return status
 
     @property
-    def room_temp(self) -> Optional[float]:
+    def room_temp(self) -> None | float:
         """Return the current temperature of the room."""
         return _value(f"room_temp_{self.room_no}", self._heater._data)
 
     @property
-    def setpoint(self) -> Optional[float]:
+    def setpoint(self) -> None | float:
         """Return the setpoint temperature of the room."""
         return _value(f"room_temp_set_{self.room_no}", self._heater._data)
 
     @property
-    def override(self) -> Optional[float]:
+    def override(self) -> None | float:
         """Return the override temperature of the room."""
         return _value(f"room_set_ovr_{self.room_no}", self._heater._data)
 
