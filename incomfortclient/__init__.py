@@ -96,11 +96,6 @@ ROOM_ATTRS: tuple[str] = ("room_temp", "setpoint", "override")
 OVERRIDE_MAX_TEMP = 30.0
 OVERRIDE_MIN_TEMP = 5.0
 
-logging.basicConfig(
-    datefmt="%H:%M:%S",
-    format="%(asctime)s %(levelname)-8s: %(message)s",
-    level=logging.WARNING,
-)
 _LOGGER = logging.getLogger(__name__)
 
 # pylint: disable=protected-access, missing-docstring
