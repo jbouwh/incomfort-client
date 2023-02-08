@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
 """Python client library for the InterGas InComfort system (via Lan2RF gateway).
 
 Each Gateway can have up to 8 Heaters (boilers) and each Heater can have 0-2
