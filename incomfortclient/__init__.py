@@ -246,7 +246,7 @@ class Heater(InComfortObject):
 
         self._data: Dict[str, Any] = {}
         self._status: Dict[str, Any] = {}
-        self._rooms: list = []
+        self._rooms: list = None
 
         self.__fake_room = None
         self._fake_room: bool = (
@@ -346,7 +346,7 @@ class Heater(InComfortObject):
 
     @property
     def rooms(self) -> List[Any]:
-        if self._rooms == []:
+        if self._rooms is None:
             self._rooms = [
                 Room(r, self)
                 for r in (1, 2)
