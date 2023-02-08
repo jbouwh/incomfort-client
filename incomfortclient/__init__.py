@@ -273,15 +273,15 @@ class Heater(InComfortObject):
         """Retrieve the Heater's latest status from the Gateway."""
         self._data = await self._get(f"data.json?heater={self._heater_idx}")
 
-        self._status = status = {}
+        self._status = {}
 
         for attr in HEATER_ATTRS:
-            status[attr] = getattr(self, attr, None)
+            self._status[attr] = getattr(self, attr, None)
 
         for key in HEATER_ATTRS_RAW:
-            status[key] = self._data.get(key)
+            self._status[key] = self._data.get(key)
 
-        _LOGGER.debug("Heater(%s).status() = %s", self._serial_no, status)
+        _LOGGER.debug("Heater(%s).status() = %s", self._serial_no, self._status)
 
     @property
     def status(self) -> dict:
