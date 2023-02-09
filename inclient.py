@@ -103,7 +103,7 @@ async def main(loop):
 
     # gateway._fake_heater = True
     try:
-        heaters = list(await gateway.heaters)
+        heaters = list(await gateway.heaters())
     except aiohttp.ClientResponseError as err:
         _LOGGER.warning("Setup failed, check your configuration, message is: %s", err)
         await session.close()
