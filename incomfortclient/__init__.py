@@ -145,7 +145,7 @@ class Gateway(InComfortObject):
 
         self._gateway = self
         self._hostname = hostname
-        self._heaters: list[Heater] = []
+        self._heaters: None | list[Heater] = None
 
         # TODO: how to safely close session if one was created here?
         self._session = session if session else aiohttp.ClientSession()
@@ -160,7 +160,7 @@ class Gateway(InComfortObject):
     # FIXME CC: heaters = incomfort_data["heaters"] = list(await client.heaters())
     async def heaters(self, force_refresh: bool = None) -> list[Heater]:
         """Retrieve the list of Heaters from the Gateway."""
-        if self._heaters and not force_refresh:
+        if self._heaters is not None and not force_refresh:
             return self._heaters
 
         heaters = dict(await self._get("heaterlist.json"))["heaterlist"]
