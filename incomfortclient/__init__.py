@@ -107,7 +107,6 @@ class InComfortObject:
 
     def __init__(self) -> None:
         self._gateway: Gateway = None
-        self._serial_no: None | str = None  # used by heaters only
 
     async def _get(self, url: str):
         _LOGGER.debug(
