@@ -16,14 +16,7 @@ import aiohttp
 
 __version__ = "0.5.0"
 
-FAKE_HEATER = False
-FAKE_HEATER_INDEX = 1
-FAKE_HEATER_SERIAL = "9901z999999"
-
 NULL_HEATER_SERIAL = "000W00000"
-
-FAKE_ROOM = False
-FAKE_ROOM_NUMBER = 2  # only 1 or 2
 
 CLIENT_TIMEOUT = 20  # seconds
 
@@ -114,17 +107,12 @@ class InComfortObject:
 
     def __init__(self) -> None:
         self._gateway: Gateway = None
-        self._fake_room: bool = None
         self._serial_no: None | str = None  # used by heaters only
 
     async def _get(self, url: str):
         _LOGGER.debug(
             "_get(url=%s, auth=%s)", url, "REDACTED" if self._gateway._auth else None
         )
-
-        if url[:17] == "data.json?heater=" and self._serial_no == FAKE_HEATER_SERIAL:
-            url = "data.json?heater=0"
-            _LOGGER.info("heater faked")
 
         async with self._gateway._session.get(
             url=f"{self._gateway._url_base}{url}",
@@ -133,22 +121,6 @@ class InComfortObject:
             timeout=self._gateway._timeout,
         ) as resp:
             response = await resp.json(content_type=None)
-
-        # if enabled, inject a fake current temperature
-        if url[:17] == "data.json?heater=" and self._fake_room:
-            tmp = 5 + random.randint(0, 8)
-            response.update({f"room_temp_{FAKE_ROOM_NUMBER}_msb": tmp})
-            response.update({f"room_temp_{FAKE_ROOM_NUMBER}_lsb": 0})
-
-            response.update({f"room_temp_set_{FAKE_ROOM_NUMBER}_msb": 7})
-            response.update({f"room_temp_set_{FAKE_ROOM_NUMBER}_lsb": 158})
-
-            _LOGGER.info(
-                "room %s faked (temperature=%s, setpoint=%s)",
-                _value(f"room_temp_{FAKE_ROOM_NUMBER}", response),  # 12.80-33.28C
-                _value(f"room_temp_set_{FAKE_ROOM_NUMBER}", response),  # 19.50C
-                FAKE_ROOM_NUMBER,
-            )
 
         _LOGGER.debug("_get(url=%s): response = %s", url, response)
         return response
@@ -186,28 +158,6 @@ class Gateway(InComfortObject):
             self._url_base = f"http://{hostname}/protect/"
             self._auth = aiohttp.BasicAuth(login=username, password=password)
 
-        self.__fake_heater = None
-        self._fake_heater: bool = FAKE_HEATER
-
-    @property
-    def _fake_heater(self) -> bool:
-        """Is there a fake Heater (for testing)."""
-        return self.__fake_heater
-
-    @_fake_heater.setter
-    def _fake_heater(self, value) -> None:
-        """Create a fake Heater (for testing).
-
-        Enable this feature before calling Gateway.heaters().
-        """
-        self.__fake_heater = value
-        if self.__fake_heater:
-            _LOGGER.warning(
-                "Gateway(%s): fake_heater mode enabled, heater = %s",
-                self._hostname,
-                FAKE_HEATER_SERIAL,
-            )
-
     # FIXME CC: heaters = incomfort_data["heaters"] = list(await client.heaters())
     async def heaters(self, force_refresh: bool = None) -> list[Heater]:
         """Retrieve the list of Heaters from the Gateway."""
@@ -215,9 +165,6 @@ class Gateway(InComfortObject):
             return self._heaters
 
         heaters = dict(await self._get("heaterlist.json"))["heaterlist"]
-
-        if self._fake_heater:
-            heaters[FAKE_HEATER_INDEX] = FAKE_HEATER_SERIAL
 
         self._heaters = [
             Heater(h, idx, self)
@@ -243,30 +190,6 @@ class Heater(InComfortObject):
         self._data: dict = {}
         self._status: dict = {}
         self._rooms: list[Room] = None
-
-        self.__fake_room = None
-        self._fake_room: bool = (
-            FAKE_ROOM if self._serial_no == FAKE_HEATER_SERIAL else False
-        )
-
-    @property
-    def _fake_room(self) -> bool:
-        """Is there a fake Room (for testing)."""
-        return self.__fake_room
-
-    @_fake_room.setter
-    def _fake_room(self, value) -> None:
-        """Create a fake Room (for testing).
-
-        Enable this feature before calling Heater.update().
-        """
-        self.__fake_room = value
-        if self.__fake_room:
-            _LOGGER.warning(
-                "Heater(%s): fake_room mode enabled, room = %s.",
-                self._serial_no,
-                FAKE_ROOM_NUMBER,
-            )
 
     async def update(self) -> None:
         """Retrieve the Heater's latest status from the Gateway."""

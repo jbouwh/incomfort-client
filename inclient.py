@@ -101,7 +101,6 @@ async def main(loop):
         debug=DEBUG_MODE,
     )
 
-    # gateway._fake_heater = True
     try:
         heaters = list(await gateway.heaters())
     except aiohttp.ClientResponseError as err:
@@ -109,14 +108,7 @@ async def main(loop):
         await session.close()
         return False
 
-    # for heater in heaters:  # TODO: deleteme
-    #     await heater.update()
-    #     print(f"Status = {heater.status}")
-    #     print(f"Display = {heater.display_code}({heater.display_text})")
-    #     print(f"Fault code = {heater.fault_code}\r\n")
-
     heater = heaters[DEFAULT_HEATER_NO]
-    # heater._fake_room = True
     await heater.update()
 
     if args.temp:
