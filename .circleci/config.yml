@@ -35,57 +35,20 @@ jobs:
           # destination: coverage
 
 
-  build:
-    docker:
-      - image: cimg/python:3.9.16
-    environment:
-      TEST_RESULTS: ~/test-results
-    working_directory: ~/working_directory
-
-    steps:
-      - checkout # check out source code to working directory
-      - run: mkdir -p $TEST_RESULTS
-
-      # Download and cache dependencies
-      - restore_cache:
-          keys:
-            - v1-dependencies-{{ checksum "requirements.txt" }}
-            # fallback to using the latest cache if no exact match is found
-            - v1-dependencies-
-      - run:
-          name: install dependencies
-          command: |
-            python3 -m venv venv
-            . venv/bin/activate
-            pip install -r requirements.txt
-            pip install -r requirements-dev.txt
-      - save_cache:
-          paths:
-            - ./venv
-          key: v1-dependencies-{{ checksum "requirements.txt" }}
-
-
   test:
     docker:
       - image: cimg/python:3.9.16
     steps:
       - checkout
+
       - run:
+          name: Install dependencies
           command: |
             pip3 install -r requirements.txt
             pip3 install -r requirements-dev.txt
             pip3 install -e .
       - run:
-          name: Clear the DEV_MODE flags, if set
-          command: |
-            sed -i -e '/__dev_mode__ =/ s/= .*/= False/' ramses_rf/const.py
-            sed -i -e '/__dev_mode__ =/ s/= .*/= False/' ramses_rf/protocol/const.py
-      - run:
-          name: Clear any DEV_HACK_* flags, if set
-          command: |
-            sed -i -e '/DEV_HACK_REGEX =/ s/= .*/= False/' ramses_rf/protocol/transport.py
-      - run:
-          name: "Run pytest"
+          name: Run pytest
           command: |
             python3 -m pytest tests -v
 
@@ -140,16 +103,10 @@ workflows:
           filters:
             tags:
               only: /.*/
-      # - build:
-      #     filters:
-      #       tags:
-      #         only: /.*/
-      # - test:
-      #     requires:
-      #       - build
-      #     filters:
-      #       tags:
-      #         only: /.*/
+      - test:
+          filters:
+            tags:
+              only: /.*/
       # - deploy:
       #     requires:
       #       - check_lint
