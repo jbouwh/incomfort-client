@@ -9,6 +9,7 @@ jobs:
   check_lint:
     docker:
       - image: cimg/python:3.9.16
+
     steps:
       - checkout
 
@@ -28,16 +29,11 @@ jobs:
             isort --check --diff *client.py
             isort --check --diff incomfort*
 
-      - store_test_results: # Upload test results for display in Test Summary: https://circleci.com/docs/2.0/collect-test-data/
-          path: test-results
-      - store_artifacts: # Upload test summary for display in Artifacts: https://circleci.com/docs/2.0/artifacts/
-          path: artifacts
-          # destination: coverage
-
 
   test:
     docker:
       - image: cimg/python:3.9.16
+
     steps:
       - checkout
 
@@ -48,14 +44,20 @@ jobs:
             pip3 install -r requirements-dev.txt
             pip3 install -e .
       - run:
-          name: Run pytest
+          name: Run tests
           command: |
-            python3 -m pytest tests -v
+            # python3 -m pytest tests -v
+            mkdir test-results
+            pytest --junitxml=test-results/junit.xml tests -v
+
+      - store_test_results: # Upload test results for display in Test Summary: https://circleci.com/docs/2.0/collect-test-data/
+          path: test-results
 
 
   deploy:
     docker:
       - image: cimg/python:3.9.16
+
     steps:
       - checkout
 
