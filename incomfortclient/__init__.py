@@ -20,7 +20,7 @@ HEATERLIST = "heaterlist"
 
 CLIENT_TIMEOUT = 20  # seconds
 
-INVALID_VALUE = (2 ** 15 - 1) / 100.0  # 127 * 256 + 255 = 327.67
+INVALID_VALUE = (2**15 - 1) / 100.0  # 127 * 256 + 255 = 327.67
 SERIAL_LINE = "0123456789abcdefghijklmnopqrstuvwxyz"
 
 # key label: IO (is a bitmask)
@@ -111,7 +111,6 @@ class IncomfortError(Exception):
 
 
 class InvalidGateway(IncomfortError):
-
     def __str__(self) -> str:
         err_msg = "Invalid/No reponse from Gateway"
         err_tip = "(check the network/hostname, and the user credentials)"
@@ -121,7 +120,6 @@ class InvalidGateway(IncomfortError):
 
 
 class InvalidHeaterList(IncomfortError):
-
     def __str__(self) -> str:
         err_msg = "There is no valid Heater in the heaterlist"
         err_tip = "(check the binding between the gateway and the heater)"

@@ -10,7 +10,6 @@ from aioresponses import aioresponses
 
 from incomfortclient import HEATERLIST, Gateway, Heater
 
-
 HOSTNAME = "192.168.0.1"
 
 SERIAL_NO_0 = "2110f25190"

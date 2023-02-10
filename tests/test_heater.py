@@ -6,9 +6,7 @@
 from __future__ import annotations
 
 import pytest
-
 from common import SERIAL_NO_0, heater_with_status
-
 
 # Test data...
 HEATER_SANS_ROOMS = (

@@ -6,13 +6,14 @@
 from __future__ import annotations
 
 import pytest
-
-from incomfortclient import (
-    HEATERLIST, NULL_SERIAL_NO, InvalidGateway, InvalidHeaterList
-)
-
 from common import HOSTNAME, SERIAL_NO_0, SERIAL_NO_1, gwy_with_heaterlist
 
+from incomfortclient import (
+    HEATERLIST,
+    NULL_SERIAL_NO,
+    InvalidGateway,
+    InvalidHeaterList,
+)
 
 # Test data...
 GATEWAYS_SANS_HEATERS = (
