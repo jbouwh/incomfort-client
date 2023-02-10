@@ -102,6 +102,34 @@ def _value(key_stub: str, data_dict: dict) -> None | float:
     return _value if _value != INVALID_VALUE else None
 
 
+class InComfortError(Exception):
+    """Base class for InComfor exceptions."""
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.message = args[0] if args else None
+
+
+class InvalidGateway(InComfortError):
+
+    def __str__(self) -> str:
+        err_msg = "Invalid/No reponse from Gateway"
+        err_tip = "(check the network/hostname, and the user credentials)"
+        if self.message:
+            return f"{err_msg}: {self.message} {err_tip}"
+        return f"{err_msg} {err_tip}"
+
+
+class InvalidHeaterList(InComfortError):
+
+    def __str__(self) -> str:
+        err_msg = "There is no valid Heater in the heaterlist"
+        err_tip = "(check the binding between the gateway and the heater)"
+        if self.message:
+            return f"{err_msg}: {self.message} {err_tip}"
+        return f"{err_msg} {err_tip}"
+
+
 class InComfortObject:
     """Base for InComfortObjects."""
 
@@ -163,7 +191,10 @@ class Gateway(InComfortObject):
         if self._heaters is not None and not force_refresh:
             return self._heaters
 
-        heaters = dict(await self._get("heaterlist.json"))[HEATERLIST]
+        try:
+            heaters = dict(await self._get("heaterlist.json"))[HEATERLIST]
+        except aiohttp.ClientError as exc:
+            raise InvalidGateway(exc)
 
         self._heaters = [
             Heater(h, idx, self)
@@ -172,6 +203,9 @@ class Gateway(InComfortObject):
         ]
 
         _LOGGER.debug("Gateway(%s).heaters() = %s", self._hostname, heaters)
+        if self._heaters == []:
+            raise InvalidHeaterList
+
         return self._heaters
 
 
