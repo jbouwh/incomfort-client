@@ -21,35 +21,36 @@ GATEWAYS_WITH_HEATER = (
 )
 
 
-async def gwy_heaterlist(hostname, payload=GATEWAYS_WITH_HEATER[0]) -> list[Heater]:
-    """Provide the response to a heaterlist query from a mocked gateway."""
+async def gwy_heaterlist(hostname, heaterlist=GATEWAYS_WITH_HEATER[0]) -> Gateway:
+    """Request the heaterlist from a mocked gateway."""
 
     with aioresponses() as mocked:
         if hostname:
             mocked.get(
-                f"http://{hostname}/heaterlist.json", payload=payload,
+                f"http://{hostname}/heaterlist.json", payload=heaterlist,
             )
 
         async with aiohttp.ClientSession() as session:
             gwy = Gateway(hostname or HOSTNAME, session=session)
-            return list(await gwy.heaters())
+            await gwy.heaters()
+
+    return gwy
 
 
-async def heater_status(payload) -> dict:
-    """Provide the response to a heater status query from a mocked gateway."""
+async def heater_status(data_heater, heaterlist=GATEWAYS_WITH_HEATER[0]) -> Heater:
+    """Update the heater status from a mocked gateway."""
 
     with aioresponses() as mocked:
         mocked.get(
-            f"http://{HOSTNAME}/heaterlist.json", payload=GATEWAYS_WITH_HEATER[0],
+            f"http://{HOSTNAME}/heaterlist.json", payload=heaterlist,
         )
         mocked.get(
-            f"http://{HOSTNAME}/data.json?heater=0", payload=payload,
+            f"http://{HOSTNAME}/data.json?heater=0", payload=data_heater,
         )
 
         async with aiohttp.ClientSession() as session:
             gwy = Gateway(HOSTNAME, session=session)
-            heaters = list(await gwy.heaters())
-
+            heaters = await gwy.heaters()
             await heaters[0].update()
 
-    return heaters[0].status
+    return heaters[0]

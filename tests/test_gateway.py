@@ -41,7 +41,7 @@ async def test_gateway_invalid():
 @pytest.mark.parametrize("index", range(len(GATEWAYS_SANS_HEATERS)))
 async def test_heaterlist_empty(index, gateways=GATEWAYS_SANS_HEATERS):
     try:
-        await gwy_heaterlist(HOSTNAME, payload=gateways[index])
+        await gwy_heaterlist(HOSTNAME, heaterlist=gateways[index])
     except InvalidHeaterList:
         return
     assert False
@@ -50,7 +50,7 @@ async def test_heaterlist_empty(index, gateways=GATEWAYS_SANS_HEATERS):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("index", range(len(GATEWAYS_WITH_HEATERS)))
 async def test_heaterlist_valid(index, gateways=GATEWAYS_WITH_HEATERS):
-    heaters = await gwy_heaterlist(HOSTNAME, payload=gateways[index])
+    gwy = await gwy_heaterlist(HOSTNAME, heaterlist=gateways[index])
 
-    assert heaters[0].serial_no == SERIAL_NO_0
-    assert len(heaters) < 2 or heaters[1].serial_no == SERIAL_NO_1
+    assert gwy._heaters[0].serial_no == SERIAL_NO_0
+    assert len(gwy._heaters) < 2 or gwy._heaters[1].serial_no == SERIAL_NO_1
