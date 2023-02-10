@@ -21,7 +21,7 @@ GATEWAYS_WITH_HEATER = (
 )
 
 
-async def gwy_heaterlist(hostname, heaterlist=GATEWAYS_WITH_HEATER[0]) -> Gateway:
+async def gwy_with_heaterlist(hostname, heaterlist=GATEWAYS_WITH_HEATER[0]) -> Gateway:
     """Request the heaterlist from a mocked gateway."""
 
     with aioresponses() as mocked:
@@ -37,7 +37,7 @@ async def gwy_heaterlist(hostname, heaterlist=GATEWAYS_WITH_HEATER[0]) -> Gatewa
     return gwy
 
 
-async def heater_status(data_heater, heaterlist=GATEWAYS_WITH_HEATER[0]) -> Heater:
+async def heater_with_status(data_heater, heaterlist=GATEWAYS_WITH_HEATER[0]) -> Heater:
     """Update the heater status from a mocked gateway."""
 
     with aioresponses() as mocked:

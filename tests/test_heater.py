@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import pytest
 
-from common import SERIAL_NO_0, heater_status
+from common import SERIAL_NO_0, heater_with_status
 
 
 # Test data...
@@ -132,7 +132,7 @@ HEATER_WITH_ROOMS = (
 @pytest.mark.asyncio
 async def test_heater_sans_rooms():
 
-    heater = await heater_status(HEATER_SANS_ROOMS[0])
+    heater = await heater_with_status(HEATER_SANS_ROOMS[0])
     assert heater.status == HEATER_SANS_ROOMS[1]
     assert len(heater.rooms) == 0
 
@@ -140,6 +140,6 @@ async def test_heater_sans_rooms():
 @pytest.mark.asyncio
 async def test_heater_with_rooms():
 
-    heater = await heater_status(HEATER_WITH_ROOMS[0])
+    heater = await heater_with_status(HEATER_WITH_ROOMS[0])
     assert heater.status == HEATER_WITH_ROOMS[1]
     assert len(heater.rooms) == 1 and heater.rooms[0].status == HEATER_WITH_ROOMS[2]
