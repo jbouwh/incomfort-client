@@ -16,7 +16,7 @@ import aiohttp
 
 __version__ = "0.5.0"
 
-NULL_HEATER_SERIAL = "000W00000"
+NULL_SERIAL_NO = "000W00000"
 
 CLIENT_TIMEOUT = 20  # seconds
 
@@ -168,7 +168,7 @@ class Gateway(InComfortObject):
         self._heaters = [
             Heater(h, idx, self)
             for idx, h in enumerate(heaters)
-            if h and h != NULL_HEATER_SERIAL
+            if h and h != NULL_SERIAL_NO
         ]
 
         _LOGGER.debug("Gateway(%s).heaters() = %s", self._hostname, heaters)
