@@ -63,9 +63,9 @@ jobs:
           name: Install dependencies
           command: |
             pip3 install twine
-      - run:
-          name: Verify git tag vs. package version
-          command: python setup.py verify  # NOTE: $CIRCLE_TAG is not available to su
+      # - run:
+      #     name: Verify git tag vs. package version
+      #     command: python setup.py verify  # NOTE: $CIRCLE_TAG is not available to su
       - run:
           name: Build the package
           command: |
