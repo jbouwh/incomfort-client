@@ -17,6 +17,7 @@ import aiohttp
 __version__ = "0.5.0"
 
 NULL_SERIAL_NO = "000W00000"
+HEATERLIST = "heaterlist"
 
 CLIENT_TIMEOUT = 20  # seconds
 
@@ -163,7 +164,7 @@ class Gateway(InComfortObject):
         if self._heaters is not None and not force_refresh:
             return self._heaters
 
-        heaters = dict(await self._get("heaterlist.json"))["heaterlist"]
+        heaters = dict(await self._get("heaterlist.json"))[HEATERLIST]
 
         self._heaters = [
             Heater(h, idx, self)
