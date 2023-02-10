@@ -60,9 +60,9 @@ jobs:
           command: |
             pip install twine
 
-      # - run:
-      #     name: Verify git tag vs. package version
-      #     command: python setup.py verify  # NOTE: $CIRCLE_TAG is not available to su
+      - run:
+          name: Verify git tag vs. package version
+          command: python setup.py verify  # NOTE: $CIRCLE_TAG is not available to su
 
       - run:
           command: |
@@ -76,7 +76,7 @@ jobs:
             echo -e "  username = __token__                         " >> ~/.pypirc
             echo -e "  password = $PYPI_TOKEN                       " >> ~/.pypirc
 
-            # twine upload -r pypi dist/*
+            twine upload -r pypi dist/*
 
 
 workflows:
