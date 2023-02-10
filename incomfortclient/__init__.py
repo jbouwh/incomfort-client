@@ -102,7 +102,7 @@ def _value(key_stub: str, data_dict: dict) -> None | float:
     return _value if _value != INVALID_VALUE else None
 
 
-class InComfortError(Exception):
+class IncomfortError(Exception):
     """Base class for InComfor exceptions."""
 
     def __init__(self, *args, **kwargs) -> None:
@@ -110,7 +110,7 @@ class InComfortError(Exception):
         self.message = args[0] if args else None
 
 
-class InvalidGateway(InComfortError):
+class InvalidGateway(IncomfortError):
 
     def __str__(self) -> str:
         err_msg = "Invalid/No reponse from Gateway"
@@ -120,7 +120,7 @@ class InvalidGateway(InComfortError):
         return f"{err_msg} {err_tip}"
 
 
-class InvalidHeaterList(InComfortError):
+class InvalidHeaterList(IncomfortError):
 
     def __str__(self) -> str:
         err_msg = "There is no valid Heater in the heaterlist"
@@ -130,7 +130,7 @@ class InvalidHeaterList(InComfortError):
         return f"{err_msg} {err_tip}"
 
 
-class InComfortObject:
+class IncomfortObject:
     """Base for InComfortObjects."""
 
     def __init__(self) -> None:
@@ -153,7 +153,7 @@ class InComfortObject:
         return response
 
 
-class Gateway(InComfortObject):
+class Gateway(IncomfortObject):
     """Representation of an InComfort (Lan2RF) Gateway."""
 
     def __init__(
@@ -209,7 +209,7 @@ class Gateway(InComfortObject):
         return self._heaters
 
 
-class Heater(InComfortObject):
+class Heater(IncomfortObject):
     """Representation of an InComfort Heater (aka boiler)."""
 
     def __init__(self, serial_no: str, idx: int, gateway: Gateway) -> None:
@@ -307,7 +307,7 @@ class Heater(InComfortObject):
         return self._rooms
 
 
-class Room(InComfortObject):
+class Room(IncomfortObject):
     """Representation of an InComfort Room."""
 
     def __init__(self, room_no: int, heater: Heater) -> None:
