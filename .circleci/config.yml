@@ -95,7 +95,7 @@ workflows:
       - deploy_package:
           requires:
             - check_lint
-            - test
+            - run_tests
           # filters:
           #   tags:
           #     only: /[0-9]+(\.[0-9]+)*/
