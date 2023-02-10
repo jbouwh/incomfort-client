@@ -5,94 +5,17 @@ version: 2.1
 
 
 jobs:
-  build:
-    docker:
-      - image: circleci/python:3.8.6
-    working_directory: ~/repo
-
-    environment:
-      TEST_RESULTS: /tmp/test-results
-
-    steps:
-      - checkout
-
-      # Download and cache dependencies
-      - restore_cache:
-          keys:
-            - v1-dependencies-{{ checksum "requirements.txt" }}
-            # fallback to using the latest cache if no exact match is found
-            - v1-dependencies-
-
-      - run:
-          name: install dependencies
-          command: |
-            python3 -m venv venv
-            . venv/bin/activate
-            pip install -r requirements.txt
-
-      - save_cache:
-          paths:
-            - ./venv
-          key: v1-dependencies-{{ checksum "requirements.txt" }}
-
-      - run: mkdir -p $TEST_RESULTS
-
-      - run:
-          name: App response
-          no_output_timeout: 30
-          command: |
-            . venv/bin/activate
-            python inclient.py ${GATEWAY} | \
-              tee ${TEST_RESULTS}/response_app.json
-
-      - run:
-          name: App response (rooms)
-          no_output_timeout: 30
-          command: |
-            . venv/bin/activate
-            sed '/^ *if _value/  s/is not None/!= 99/' incomfortclient/__init__.py \
-              > ${TEST_RESULTS}/__init__.py
-            python ${TEST_RESULTS}/__init__.py ${GATEWAY} \
-              | tee -a ${TEST_RESULTS}/response_app_rooms.json
-
-      - run:
-          name: App response (raw)
-          no_output_timeout: 30
-          command: |
-            . venv/bin/activate
-            python inclient.py ${GATEWAY} --raw \
-              | tee ${TEST_RESULTS}/response_app_raw.json
-
-      - run:
-          name: cURL response (raw)
-          no_output_timeout: 30
-          command: |
-            curl -X GET http://${GATEWAY}/data.json?heater=0 | \
-              python -c "import sys, json; print(json.load(sys.stdin))" | \
-              tee ${TEST_RESULTS}/response_curl_raw.json
-
-      - run:
-          name: Compare cURL vs App (raw)
-          no_output_timeout: 30
-          command: |
-            echo diff -s ${TEST_RESULTS}/response_curl_raw.json ${TEST_RESULTS}/response_app_raw.json | \
-              tee -a ${TEST_RESULTS}/test-results.txt
-            diff -s ${TEST_RESULTS}/response_curl_raw.json ${TEST_RESULTS}/response_app_raw.json | \
-              tee -a ${TEST_RESULTS}/test-results.txt
-            echo tee -a ${TEST_RESULTS}/test-results.txt
-
-      - store_artifacts:
-          path: /tmp/test-results
-          destination: devices_summary
 
   check_lint:
     docker:
-      - image: circleci/python:3.7.5
+      - image: cimg/python:3.9.16
     steps:
       - checkout
+
       - run:
           command: |
-            sudo pip install black isort
+            # pip install -r requirements-dev.txt
+            pip install black isort
             mkdir test-results
       - run:
           name: "Check formatting 1: black"
@@ -104,15 +27,72 @@ jobs:
           command: |
             isort --check --diff *client.py
             isort --check --diff incomfort*
+
       - store_test_results: # Upload test results for display in Test Summary: https://circleci.com/docs/2.0/collect-test-data/
           path: test-results
       - store_artifacts: # Upload test summary for display in Artifacts: https://circleci.com/docs/2.0/artifacts/
           path: artifacts
-          destination: coverage
+          # destination: coverage
+
+
+  build:
+    docker:
+      - image: cimg/python:3.9.16
+    environment:
+      TEST_RESULTS: ~/test-results
+    working_directory: ~/working_directory
+
+    steps:
+      - checkout # check out source code to working directory
+      - run: mkdir -p $TEST_RESULTS
+
+      # Download and cache dependencies
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "requirements.txt" }}
+            # fallback to using the latest cache if no exact match is found
+            - v1-dependencies-
+      - run:
+          name: install dependencies
+          command: |
+            python3 -m venv venv
+            . venv/bin/activate
+            pip install -r requirements.txt
+            pip install -r requirements-dev.txt
+      - save_cache:
+          paths:
+            - ./venv
+          key: v1-dependencies-{{ checksum "requirements.txt" }}
+
+
+  test:
+    docker:
+      - image: cimg/python:3.9.16
+    steps:
+      - checkout
+      - run:
+          command: |
+            pip3 install -r requirements.txt
+            pip3 install -r requirements-dev.txt
+            pip3 install -e .
+      - run:
+          name: Clear the DEV_MODE flags, if set
+          command: |
+            sed -i -e '/__dev_mode__ =/ s/= .*/= False/' ramses_rf/const.py
+            sed -i -e '/__dev_mode__ =/ s/= .*/= False/' ramses_rf/protocol/const.py
+      - run:
+          name: Clear any DEV_HACK_* flags, if set
+          command: |
+            sed -i -e '/DEV_HACK_REGEX =/ s/= .*/= False/' ramses_rf/protocol/transport.py
+      - run:
+          name: "Run pytest"
+          command: |
+            python3 -m pytest tests -v
+
 
   deploy:
     docker:
-      - image: circleci/python:3.7.5
+      - image: cimg/python:3.9.16
     steps:
       - checkout
       - run:
@@ -154,24 +134,28 @@ jobs:
 workflows:
   version: 2
 
-  build-and-deploy:
+  build-and-deploy:  # will deploy only if the commit has a tag
     jobs:
-      - build:
-          filters: # required since `deploy` has tag filters AND requires `build`
-            tags:
-              only: /.*/
       - check_lint:
-          requires:
-            - build
-          filters: # required since `deploy` has tag filters AND requires `build`
-            tags:
-              only: /.*/
-      - deploy:
-          requires:
-            - build
-            - check_lint
           filters:
             tags:
-              only: /[0-9]+(\.[0-9]+)*/
-            branches:
-              ignore: /.*/
+              only: /.*/
+      # - build:
+      #     filters:
+      #       tags:
+      #         only: /.*/
+      # - test:
+      #     requires:
+      #       - build
+      #     filters:
+      #       tags:
+      #         only: /.*/
+      # - deploy:
+      #     requires:
+      #       - check_lint
+      #       - test
+      #     filters:
+      #       tags:
+      #         only: /[0-9]+(\.[0-9]+)*/
+      #       branches:
+      #         ignore: /.*/
