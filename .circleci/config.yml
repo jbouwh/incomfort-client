@@ -6,16 +6,25 @@ version: 2.1
 
 jobs:
 
-  check_lint:
-    docker:
+  check_version:
+    docker: &docker_config
       - image: cimg/python:3.9.16
 
     steps:
       - checkout
 
       - run:
-          command: |
-            pip install black isort
+          name: Verify git tag vs. package version
+          command: python setup.py verify  # NOTE: $CIRCLE_TAG is not available to su
+
+
+  check_lint:
+    docker: *docker_config
+
+    steps:
+      - checkout
+
+      - run: command: pip install black isort
 
       - run:
           name: "Check formatting 1: black"
@@ -31,8 +40,7 @@ jobs:
 
 
   run_tests:
-    docker:
-      - image: cimg/python:3.9.16
+    docker: *docker_config
 
     steps:
       - checkout
@@ -43,34 +51,16 @@ jobs:
             pip install -r requirements-dev.txt
             pip install -e .
 
-      - run:
-          name: Run tests
-          command: |
-            pytest tests -v
-
-
-  check_version:
-    docker:
-      - image: cimg/python:3.9.16
-
-    steps:
-      - checkout
-
-      - run:
-          name: Verify git tag vs. package version
-          command: python setup.py verify  # NOTE: $CIRCLE_TAG is not available to su
+      - run: command:  pytest tests -v
 
 
   deploy_package:
-    docker:
-      - image: cimg/python:3.9.16
+    docker: *docker_config
 
     steps:
       - checkout
 
-      - run:
-          command: |
-            pip install twine
+      - run: command:  pip install twine
 
       - run:
           command: |
@@ -98,14 +88,17 @@ workflows:
               only: /[0-9]+(\.[0-9]+)*/
             branches:
               ignore: /.*/
+
       - check_lint:
           filters:
             tags:
               only: /.*/
+
       - run_tests:
           filters:
             tags:
               only: /.*/
+
       - deploy_package:
           requires:
             - check_version
