@@ -24,7 +24,8 @@ jobs:
     steps:
       - checkout
 
-      - run: command: pip install black isort
+      - run:
+          command: pip install black isort
 
       - run:
           name: "Check formatting 1: black"
@@ -51,7 +52,8 @@ jobs:
             pip install -r requirements-dev.txt
             pip install -e .
 
-      - run: command:  pytest tests -v
+      - run:
+          command: pytest tests -v
 
 
   deploy_package:
@@ -60,7 +62,8 @@ jobs:
     steps:
       - checkout
 
-      - run: command:  pip install twine
+      - run:
+          command: pip install twine
 
       - run:
           command: |
