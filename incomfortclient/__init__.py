@@ -18,7 +18,7 @@ __version__ = "0.5.0"
 NULL_SERIAL_NO = "000W00000"
 HEATERLIST = "heaterlist"
 
-CLIENT_TIMEOUT = 20  # seconds
+CLIENT_TIMEOUT = 300  # seconds
 
 INVALID_VALUE = (2**15 - 1) / 100.0  # 127 * 256 + 255 = 327.67
 SERIAL_LINE = "0123456789abcdefghijklmnopqrstuvwxyz"
