@@ -1,1 +1,2 @@
 aiohttp>=3.8.1
+aioresponses>=0.7.6
