@@ -26,7 +26,8 @@ async def gwy_with_heaterlist(hostname, heaterlist=GATEWAYS_WITH_HEATER[0]) -> G
     with aioresponses() as mocked:
         if hostname:
             mocked.get(
-                f"http://{hostname}/heaterlist.json", payload=heaterlist,
+                f"http://{hostname}/heaterlist.json",
+                payload=heaterlist,
             )
 
         async with aiohttp.ClientSession() as session:
@@ -41,10 +42,12 @@ async def heater_with_status(data_heater, heaterlist=GATEWAYS_WITH_HEATER[0]) ->
 
     with aioresponses() as mocked:
         mocked.get(
-            f"http://{HOSTNAME}/heaterlist.json", payload=heaterlist,
+            f"http://{HOSTNAME}/heaterlist.json",
+            payload=heaterlist,
         )
         mocked.get(
-            f"http://{HOSTNAME}/data.json?heater=0", payload=data_heater,
+            f"http://{HOSTNAME}/data.json?heater=0",
+            payload=data_heater,
         )
 
         async with aiohttp.ClientSession() as session:
