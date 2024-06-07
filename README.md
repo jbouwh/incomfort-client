@@ -1,4 +1,4 @@
-[![CircleCI](https://circleci.com/gh/zxdavb/incomfort-client.svg?style=svg)](https://circleci.com/gh/zxdavb/incomfort-client)
+[![PyPI version](https://badge.fury.io/py/incomfort-client.svg)](https://badge.fury.io/py/incomfort-client)
 
 # incomfort-client
 
@@ -6,28 +6,37 @@ Python client library for **Intergas boilers** accesible via a **Lan2RF gateway*
 
 This library was previously called **intouch-client**, as it is known in the UK as **InTouch**, but in mainland Europe (especially the Netherlands, where is it popular) it is known as **Incomfort**.
 
-It is written for Python v3.6.7. It is available as a [PyPi package](https://pypi.org/project/incomfort-client/).
+It is written for Python v3.9+. It is available as a [PyPi package](https://pypi.org/project/incomfort-client/).
+
+With many thanks, the code was refactored by @zxdavb and maintained for about 5 years, and maintanance now has been taken over by @jbouwh to be able to cuntinue support.
+
+The library is used as backend code for the [Intergas InComfort/Intouch Lan2RF gateway](https://www.home-assistant.io/integrations/incomfort/) integration with [Home Assistant](https://www.home-assistant.io/).
 
 ### Porting from syncio libraries
+
 This library is based upon https://github.com/bwesterb/incomfort, but uses **aiohttp** rather than synchronous I/O (such as **requests** or **httplib**).
 
 Where possible, it uses uses the same methods and properties as **bwesterb/incomfort**, but with the following differences:
 
-  - **`Gateway`** class
-    - added kwargs: `username`, `password` (used for newer versions of firmware)
+- **`Gateway`** class
 
-  - **`Heater`** class
-    - renamed: `is_burning`, `is_failed`, `is_pumping`, `is_tapping`
-    - moved: `room_temp`, `setpoint`, `setpoint_override`, `set` to **`Room`** class
-    - new/added: `update`, `status`, `rooms`
+  - added kwargs: `username`, `password` (used for newer versions of firmware)
 
-  - **`Room`** class has been added, and some methods moved in from **`Heater`**
-    - same name: `room_temp`, `setpoint`
-    - renamed: `override`, `set_override`
-    - new/added: `status`
+- **`Heater`** class
+
+  - renamed: `is_burning`, `is_failed`, `is_pumping`, `is_tapping`
+  - moved: `room_temp`, `setpoint`, `setpoint_override`, `set` to **`Room`** class
+  - new/added: `update`, `status`, `rooms`
+
+- **`Room`** class has been added, and some methods moved in from **`Heater`**
+  - same name: `room_temp`, `setpoint`
+  - renamed: `override`, `set_override`
+  - new/added: `status`
 
 ### Basic CLI included
+
 There is a very basic CLI (this output has been formatted for readability):
+
 ```bash
 (venv) root@hostname:~/$ python inclient.py ${HOSTNAME}
 {
@@ -55,7 +64,9 @@ There is a very basic CLI (this output has been formatted for readability):
 ```
 
 ### QA/CI via CircleCI
+
 QA includes comparing JSON from **cURL** with output from this app using **diff** (note the `--raw` switch):
+
 ```bash
 (venv) root@hostname:~/$ curl -X GET http://${HOSTNAME}/data.json?heater=0 | \
     python -c "import sys, json; print(json.load(sys.stdin))" > a.out
@@ -64,9 +75,13 @@ QA includes comparing JSON from **cURL** with output from this app using **diff*
 
 (venv) root@hostname:~/$ diff a.out b.out
 ```
+
 Newer versions of the gateway require authentication:
+
 ```bash
 (venv) root@hostname:~/$ python inclient.py ${HOSTNAME} -u ${USER} -p ${PASS}
 
 (venv) root@hostname:~/$ curl --user ${USER}:${PASS} -X GET http://${HOSTNAME}/protect/data.json?heater=0
 ```
+
+> Note that at the moment CircleCI is not active.

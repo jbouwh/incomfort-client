@@ -1,4 +1,4 @@
-# .pre-commit-config.yaml file for https://github.com/zxdavb
+# .pre-commit-config.yaml file for https://github.com/jbouwh/incomfort-client
 
 repos:
   - repo: https://github.com/psf/black
@@ -11,7 +11,7 @@ repos:
         files: ^(incomfort.*/.+)?[^/]+\.py$
 
   - repo: https://github.com/pycqa/flake8
-    rev: 6.0.0
+    rev: 7.0.0
     hooks:
       - id: flake8
         additional_dependencies:
@@ -21,7 +21,7 @@ repos:
         exclude: ^incomfort.*/tests\.py$
 
   - repo: https://github.com/pycqa/isort
-    rev: 5.12.0
+    rev: 5.13.2
     hooks:
       - id: isort
         args: ["--profile", "black", "--filter-files"]

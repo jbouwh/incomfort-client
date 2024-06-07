@@ -15,7 +15,7 @@ with open("incomfortclient/__init__.py") as fh:
             VERSION = eval(line.split("=")[-1])
             break
 
-URL = "https://github.com/zxdavb/incomfort-client"
+URL = "https://github.com/jbouwh/incomfort-client"
 
 with open("README.md", "r") as fh:
     LONG_DESCRIPTION = fh.read()
@@ -35,8 +35,8 @@ setup(
     name="incomfort-client",
     description="An aiohttp-based client for Intergas InComfort/InTouch Lan2RF systems",
     keywords=["intergas", "incomfort", "intouch", "lan2rf"],
-    author="David Bonnes",
-    author_email="zxdavb@gmail.com",
+    author="Jan Bouwhuis",
+    author_email="jan@jbsoft.nl",
     url=URL,
     download_url=f"{URL}/archive/{VERSION}.tar.gz",
     install_requires=[list(val.strip() for val in open("requirements.txt"))],
@@ -50,7 +50,7 @@ setup(
         "Development Status :: 5 - Production/Stable",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
-        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
         "Topic :: Home Automation",
     ],
     cmdclass={
