@@ -1,4 +1,4 @@
-# .flake8 file for https://github.com/zxdavb
+# .flake8 file for https://github.com/jbouwh/incomfort-client
 
 [flake8]
   # max-line-length as used by black
