@@ -32,41 +32,41 @@ BITMASK_TAP = 0x04  # tap (DHW) state: function on / off
 # key label: displ_code
 DISPLAY_CODES: list[int, str] = {
     0: "opentherm",
-    15: "boiler ext.",
+    15: "boiler_ext",
     24: "frost",
-    37: "central heating rf",
-    51: "tapwater int.",
+    37: "central_heating_rf",
+    51: "tapwater_int",
     85: "sensortest",
-    102: "central heating",
+    102: "central_heating",
     126: "standby",
-    153: "postrun boiler",
+    153: "postrun_boiler",
     170: "service",
     204: "tapwater",
-    231: "postrun ch",
-    240: "boiler int.",
+    231: "postrun_ch",
+    240: "boiler_int",
     255: "buffer",
 }
 FAULT_CODES: list[int, str] = {
-    0: "Sensor fault after self check",
-    1: "Temperature too high",
-    2: "S1 and S2 interchanged",
-    4: "No flame signal",
-    5: "Poor flame signal",
-    6: "Flame detection fault",
-    8: "Incorrect fan speed",
-    10: "Sensor fault S1",
-    11: "Sensor fault S1",
-    12: "Sensor fault S1",
-    13: "Sensor fault S1",
-    14: "Sensor fault S1",
-    20: "Sensor fault S2",
-    21: "Sensor fault S2",
-    22: "Sensor fault S2",
-    23: "Sensor fault S2",
-    24: "Sensor fault S2",
-    27: "Shortcut outside sensor temperature",
-    29: "Gas valve relay faulty",
-    30: "Gas valve relay faulty",
+    0: "sensor_fault_after_self_check",
+    1: "temperature_too_high",
+    2: "s1_and_S2_interchanged",
+    4: "no_flame_signal",
+    5: "poor_flame_signal",
+    6: "flame_detection_fault",
+    8: "incorrect fan_speed",
+    10: "sensor_fault_s1",
+    11: "sensor_fault_s1",
+    12: "sensor_fault_s1",
+    13: "sensor_fault_s1",
+    14: "sensor_fault_s1",
+    20: "sensor_fault_s2",
+    21: "sensor_fault_s2",
+    22: "sensor_fault_s2",
+    23: "sensor_fault_s2",
+    24: "sensor_fault_s2",
+    27: "shortcut_outside_sensor temperature",
+    29: "gas_valve_relay_faulty",
+    30: "gas_valve_relay_faulty",
 }  # "0.0": "Low system pressure"
 
 HEATER_ATTRS: tuple[str] = (
@@ -349,11 +349,11 @@ class Room(IncomfortObject):
 
         try:
             assert OVERRIDE_MIN_TEMP <= setpoint <= OVERRIDE_MAX_TEMP
-        except AssertionError:
+        except AssertionError as exc:
             raise ValueError(
                 "The setpoint is outside of it's valid range, "
                 f"{OVERRIDE_MIN_TEMP}-{OVERRIDE_MAX_TEMP}."
-            )
+            ) from exc
 
         url = "data.json?heater={self._heater._heater_idx}"
         url += f"&thermostat={int(self.room_no) - 1}"
