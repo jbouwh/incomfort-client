@@ -56,6 +56,7 @@ pytest-picked = "^0.5.0"
 pytest-xdist = "^3.6.1"
 pytest = "^8.2.2"
 pytest-github-actions-annotate-failures = "^0.2.0"
+pylint = "^3.2.3"
 
 [tool.poetry.urls]
 "Bug Tracker" = "https://github.com/jbouwh/incomfort-client/issues"
