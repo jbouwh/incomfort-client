@@ -8,7 +8,7 @@ from __future__ import annotations
 import aiohttp
 from aioresponses import aioresponses
 
-from src.incomfortclient import HEATERLIST, Gateway, Heater
+from incomfortclient import HEATERLIST, Gateway, Heater
 
 HOSTNAME = "192.168.0.1"
 

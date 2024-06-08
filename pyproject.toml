@@ -163,12 +163,10 @@ select = [
   "F",
   "W",
   "B",
-  "B950"
 ]
 ignore = [
   "E203",
   "E501",
-  "W503",
 ]
 
 [tool.ruff.lint.flake8-pytest-style]
