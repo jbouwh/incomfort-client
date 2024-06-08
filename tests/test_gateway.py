@@ -8,7 +8,7 @@ from __future__ import annotations
 import pytest
 from common import HOSTNAME, SERIAL_NO_0, SERIAL_NO_1, gwy_with_heaterlist
 
-from incomfortclient import (
+from src.incomfortclient import (
     HEATERLIST,
     NULL_SERIAL_NO,
     InvalidGateway,
