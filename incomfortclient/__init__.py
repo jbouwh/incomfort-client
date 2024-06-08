@@ -192,7 +192,7 @@ class Gateway(IncomfortObject):
         try:
             heaters = dict(await self._get("heaterlist.json"))[HEATERLIST]
         except aiohttp.ClientError as exc:
-            raise InvalidGateway(exc)
+            raise InvalidGateway(exc) from exc
 
         self._heaters = [
             Heater(h, idx, self)
@@ -349,11 +349,11 @@ class Room(IncomfortObject):
 
         try:
             assert OVERRIDE_MIN_TEMP <= setpoint <= OVERRIDE_MAX_TEMP
-        except AssertionError:
+        except AssertionError as exc:
             raise ValueError(
                 "The setpoint is outside of it's valid range, "
                 f"{OVERRIDE_MIN_TEMP}-{OVERRIDE_MAX_TEMP}."
-            )
+            ) from exc
 
         url = "data.json?heater={self._heater._heater_idx}"
         url += f"&thermostat={int(self.room_no) - 1}"
