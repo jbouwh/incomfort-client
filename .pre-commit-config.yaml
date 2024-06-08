@@ -25,3 +25,9 @@ repos:
     hooks:
       - id: isort
         args: ["--profile", "black", "--filter-files"]
+
+  - id: pylint
+    name: 🌟 Starring code with pylint
+    language: system
+    types: [python]
+    entry: poetry run pylint
