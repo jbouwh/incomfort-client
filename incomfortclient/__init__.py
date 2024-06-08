@@ -30,7 +30,7 @@ BITMASK_PUMP = 0x02  # pump state: on / off
 BITMASK_TAP = 0x04  # tap (DHW) state: function on / off
 
 # key label: displ_code
-DISPLAY_CODES: list[int, str] = {
+DISPLAY_CODES: dict[int, str] = {
     0: "opentherm",
     15: "boiler ext.",
     24: "frost",
@@ -46,7 +46,7 @@ DISPLAY_CODES: list[int, str] = {
     240: "boiler int.",
     255: "buffer",
 }
-FAULT_CODES: list[int, str] = {
+FAULT_CODES: dict[int, str] = {
     0: "Sensor fault after self check",
     1: "Temperature too high",
     2: "S1 and S2 interchanged",
@@ -69,7 +69,7 @@ FAULT_CODES: list[int, str] = {
     30: "Gas valve relay faulty",
 }  # "0.0": "Low system pressure"
 
-HEATER_ATTRS: tuple[str] = (
+HEATER_ATTRS: tuple[str, ...] = (
     "display_code",
     "display_text",
     "fault_code",
@@ -82,9 +82,9 @@ HEATER_ATTRS: tuple[str] = (
     "pressure",
     "serial_no",
 )
-HEATER_ATTRS_RAW: tuple[str] = ("nodenr", "rf_message_rssi", "rfstatus_cntr")
+HEATER_ATTRS_RAW: tuple[str, ...] = ("nodenr", "rf_message_rssi", "rfstatus_cntr")
 
-ROOM_ATTRS: tuple[str] = ("room_temp", "setpoint", "override")
+ROOM_ATTRS: tuple[str, ...] = ("room_temp", "setpoint", "override")
 
 OVERRIDE_MAX_TEMP = 30.0
 OVERRIDE_MIN_TEMP = 5.0
