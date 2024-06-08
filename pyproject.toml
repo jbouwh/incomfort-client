@@ -95,7 +95,6 @@ max-attributes = 8
 [tool.pylint."MESSAGES CONTROL"]
 disable = [
   "format",
-  "abstract-class-little-used",
   "abstract-method",
   "cyclic-import",
   "duplicate-code",
@@ -104,7 +103,6 @@ disable = [
   "locally-disabled",
   "not-an-iterable",
   "not-context-manager",
-  "redefined-variable-type",
   "too-few-public-methods",
   "too-many-arguments",
   "too-many-branches",
@@ -128,7 +126,7 @@ ignored-classes = "_CountingAttr"
 expected-line-ending-format = "LF"
 
 [tool.pylint.EXCEPTIONS]
-overgeneral-exceptions = ["Exception","HomeAssistantError"]
+overgeneral-exceptions = ["Exception"]
 
 [build-system]
 build-backend = "poetry.core.masonry.api"
