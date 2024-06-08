@@ -64,7 +64,7 @@ FAULT_CODES: list[int, str] = {
     22: "sensor_fault_s2",
     23: "sensor_fault_s2",
     24: "sensor_fault_s2",
-    27: "shortcut_outside_sensor temperature",
+    27: "shortcut_outside_sensor_temperature",
     29: "gas_valve_relay_faulty",
     30: "gas_valve_relay_faulty",
 }  # "0.0": "Low system pressure"
