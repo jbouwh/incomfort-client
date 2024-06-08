@@ -112,7 +112,7 @@ class IncomfortError(Exception):
 
 class InvalidGateway(IncomfortError):
     def __str__(self) -> str:
-        err_msg = "Invalid/No reponse from Gateway"
+        err_msg = "Invalid/No response from Gateway"
         err_tip = "(check the network/hostname, and the user credentials)"
         if self.message:
             return f"{err_msg}: {self.message} {err_tip}"
