@@ -48,7 +48,7 @@ DISPLAY_CODES: list[int, str] = {
 }
 FAULT_CODES: list[int, str] = {
     0: "sensor_fault_after_self_check",
-    1: "temperature_too_high",
+    1: "cv_temperature_too_high",
     2: "s1_and_s2_interchanged",
     4: "no_flame_signal",
     5: "poor_flame_signal",
