@@ -251,7 +251,7 @@ class Heater(IncomfortObject):
         """Return the display code as text rather than a code."""
         code = self.display_code
         code_map = FAULT_CODES if self.is_failed else DISPLAY_CODES
-        return code_map.get(code, f"unknown/other, code = '{code}'")
+        return code_map.get(code, f"code_{code}")
 
     @property
     def fault_code(self) -> None | int:
