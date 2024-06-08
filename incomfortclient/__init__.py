@@ -30,7 +30,7 @@ BITMASK_PUMP = 0x02  # pump state: on / off
 BITMASK_TAP = 0x04  # tap (DHW) state: function on / off
 
 # key label: displ_code
-DISPLAY_CODES: list[int, str] = {
+DISPLAY_CODES: dict[int, str] = {
     0: "opentherm",
     15: "boiler_ext",
     24: "frost",
@@ -46,7 +46,7 @@ DISPLAY_CODES: list[int, str] = {
     240: "boiler_int",
     255: "buffer",
 }
-FAULT_CODES: list[int, str] = {
+FAULT_CODES: dict[int, str] = {
     0: "sensor_fault_after_self_check",
     1: "cv_temperature_too_high",
     2: "s1_and_s2_interchanged",
@@ -69,7 +69,7 @@ FAULT_CODES: list[int, str] = {
     30: "gas_valve_relay_faulty",
 }  # "0.0": "Low system pressure"
 
-HEATER_ATTRS: tuple[str] = (
+HEATER_ATTRS: tuple[str, ...] = (
     "display_code",
     "display_text",
     "fault_code",
@@ -82,9 +82,9 @@ HEATER_ATTRS: tuple[str] = (
     "pressure",
     "serial_no",
 )
-HEATER_ATTRS_RAW: tuple[str] = ("nodenr", "rf_message_rssi", "rfstatus_cntr")
+HEATER_ATTRS_RAW: tuple[str, ...] = ("nodenr", "rf_message_rssi", "rfstatus_cntr")
 
-ROOM_ATTRS: tuple[str] = ("room_temp", "setpoint", "override")
+ROOM_ATTRS: tuple[str, ...] = ("room_temp", "setpoint", "override")
 
 OVERRIDE_MAX_TEMP = 30.0
 OVERRIDE_MIN_TEMP = 5.0
@@ -112,7 +112,7 @@ class IncomfortError(Exception):
 
 class InvalidGateway(IncomfortError):
     def __str__(self) -> str:
-        err_msg = "Invalid/No reponse from Gateway"
+        err_msg = "Invalid/No response from Gateway"
         err_tip = "(check the network/hostname, and the user credentials)"
         if self.message:
             return f"{err_msg}: {self.message} {err_tip}"
@@ -192,7 +192,7 @@ class Gateway(IncomfortObject):
         try:
             heaters = dict(await self._get("heaterlist.json"))[HEATERLIST]
         except aiohttp.ClientError as exc:
-            raise InvalidGateway(exc)
+            raise InvalidGateway(exc) from exc
 
         self._heaters = [
             Heater(h, idx, self)

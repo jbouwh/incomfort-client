@@ -35,7 +35,7 @@ async def test_gateway_invalid():
         await gwy_with_heaterlist(None)
     except InvalidGateway:
         return
-    assert False
+    raise AssertionError
 
 
 @pytest.mark.asyncio
@@ -45,7 +45,7 @@ async def test_heaterlist_empty(index, gateways=GATEWAYS_SANS_HEATERS):
         await gwy_with_heaterlist(HOSTNAME, heaterlist=gateways[index])
     except InvalidHeaterList:
         return
-    assert False
+    raise AssertionError
 
 
 @pytest.mark.asyncio
