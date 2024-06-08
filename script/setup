@@ -34,6 +34,6 @@ script/bootstrap
 pre-commit install
 
 echo "Setup done!"
-echo "Activate the python venv: ic-venv by installing the Python extention (and debugger) in the dev container."
+echo "Activate the python venv: ic-venv by installing the Python extension (and debugger) in the dev container."
 echo "To activate the venv manually in a shell, run:"
 echo "source \$VIRTUAL_ENV/bin/activate"

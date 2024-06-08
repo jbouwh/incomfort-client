@@ -2,13 +2,13 @@
 
 # incomfort-client
 
-Python client library for **Intergas boilers** accesible via a **Lan2RF gateway** by abstracting its HTTP API. It includes a basic CLI to demonstrate how to use the library.
+Python client library for **Intergas boilers** accessible via a **Lan2RF gateway** by abstracting its HTTP API. It includes a basic CLI to demonstrate how to use the library.
 
 This library was previously called **intouch-client**, as it is known in the UK as **InTouch**, but in mainland Europe (especially the Netherlands, where is it popular) it is known as **Incomfort**.
 
 It is written for Python v3.9+. It is available as a [PyPi package](https://pypi.org/project/incomfort-client/).
 
-With many thanks, the code was refactored by @zxdavb and maintained for about 5 years, and maintanance now has been taken over by @jbouwh to be able to cuntinue support.
+With many thanks, the code was refactored by @zxdavb and maintained for about 5 years, and maintenance now has been taken over by @jbouwh to be able to continue support.
 
 The library is used as backend code for the [Intergas InComfort/Intouch Lan2RF gateway](https://www.home-assistant.io/integrations/incomfort/) integration with [Home Assistant](https://www.home-assistant.io/).
 
@@ -16,7 +16,7 @@ The library is used as backend code for the [Intergas InComfort/Intouch Lan2RF g
 
 This library is based upon https://github.com/bwesterb/incomfort, but uses **aiohttp** rather than synchronous I/O (such as **requests** or **httplib**).
 
-Where possible, it uses uses the same methods and properties as **bwesterb/incomfort**, but with the following differences:
+Where possible, it uses the same methods and properties as **bwesterb/incomfort**, but with the following differences:
 
 - **`Gateway`** class
 
