@@ -34,7 +34,7 @@ BITMASK_TAP = 0x04  # tap (DHW) state: function on / off
 ISSUE_URL = "https://github.com/jbouwh/incomfort-client/issues"
 
 
-class DiplayCode(IntEnum):
+class DisplayCode(IntEnum):
     """Label to display code."""
 
     UNKNOWN = -1
@@ -232,7 +232,7 @@ class Heater(IncomfortObject):
         self._data: dict = {}
         self._status: dict = {}
         self._rooms: list[Room] = None
-        self.display_code: DiplayCode | None = None
+        self.display_code: DisplayCode | None = None
         self.fault_code: FaultCode | None = None
         self._last_display_code: int | None = None
 
@@ -258,9 +258,9 @@ class Heater(IncomfortObject):
         else:
             self.fault_code = None
             try:
-                self.display_code = DiplayCode(code)
+                self.display_code = DisplayCode(code)
             except ValueError:
-                self.display_code = DiplayCode.UNKNOWN
+                self.display_code = DisplayCode.UNKNOWN
                 if self._last_display_code != code:
                     _LOGGER.warning(
                         "Unknown operation code %s reported by heater %s"
