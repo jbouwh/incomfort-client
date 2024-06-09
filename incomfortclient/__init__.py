@@ -232,8 +232,8 @@ class Heater(IncomfortObject):
         self._data: dict = {}
         self._status: dict = {}
         self._rooms: list[Room] = None
-        self._display_code: DiplayCode | None = None
-        self._fault_code: FaultCode | None = None
+        self.display_code: DiplayCode | None = None
+        self.fault_code: FaultCode | None = None
         self._last_display_code: int | None = None
 
     async def update(self) -> None:
@@ -242,11 +242,11 @@ class Heater(IncomfortObject):
 
         code: int = self._data["displ_code"]
         if self.is_failed:
-            self._display_code = None
+            self.display_code = None
             try:
-                self._fault_code = FaultCode(code)
+                self.fault_code = FaultCode(code)
             except ValueError:
-                self._fault_code = FaultCode.UNKNOWN
+                self.fault_code = FaultCode.UNKNOWN
                 if self._last_display_code != code:
                     _LOGGER.warning(
                         "Unknown fault code %s reported by heater %s. "
@@ -256,11 +256,11 @@ class Heater(IncomfortObject):
                         ISSUE_URL,
                     )
         else:
-            self._fault_code = None
+            self.fault_code = None
             try:
-                self._display_code = DiplayCode(code)
+                self.display_code = DiplayCode(code)
             except ValueError:
-                self._display_code = DiplayCode.UNKNOWN
+                self.display_code = DiplayCode.UNKNOWN
                 if self._last_display_code != code:
                     _LOGGER.warning(
                         "Unknown operation code %s reported by heater %s"
@@ -287,23 +287,11 @@ class Heater(IncomfortObject):
         return self._status
 
     @property
-    def display_code(self) -> DiplayCode | None:
-        """Return the display code, 'displ_code'."""
-        return self._display_code
-
-    @property
     def display_text(self) -> str:
         """Return the display or fault code as text label rather than a code."""
         if self.is_failed:
-            fault_code = self._fault_code or FaultCode.UNKNOWN
-            return fault_code.name.lower()
-        display_code = self._display_code or DiplayCode.UNKNOWN
-        return display_code.name.lower()
-
-    @property
-    def fault_code(self) -> FaultCode | None:
-        """Return the fault code when the heater is in a failed state."""
-        return self._fault_code
+            return self.fault_code.name.lower() if self.fault_code else None
+        return self.display_code.name.lower() if self.display_code else None
 
     @property
     def is_burning(self) -> bool:
