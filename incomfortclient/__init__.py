@@ -15,7 +15,7 @@ from typing import Any
 
 import aiohttp
 
-__version__ = "0.6.1"
+__version__ = "0.6.2"
 
 NULL_SERIAL_NO = "000W00000"
 HEATERLIST = "heaterlist"
