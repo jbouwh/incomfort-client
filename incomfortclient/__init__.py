@@ -290,8 +290,8 @@ class Heater(IncomfortObject):
     def display_text(self) -> str | None:
         """Return the display or fault code as text label rather than a code."""
         if self.is_failed:
-            return self.fault_code.name.lower() if self.fault_code else None
-        return self.display_code.name.lower() if self.display_code else None
+            return self.fault_code.name.lower() if self.fault_code is not None else None
+        return self.display_code.name.lower() if self.display_code is not None else None
 
     @property
     def is_burning(self) -> bool:
