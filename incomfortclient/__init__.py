@@ -202,7 +202,7 @@ class Gateway(IncomfortObject):
 
         try:
             heaters = dict(await self._get("heaterlist.json"))[HEATERLIST]
-        except aiohttp.ClientError as exc:
+        except (aiohttp.ClientError, UnicodeDecodeError) as exc:
             raise InvalidGateway(exc) from exc
 
         self._heaters = [
