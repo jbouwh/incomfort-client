@@ -15,7 +15,7 @@ from typing import Any
 
 import aiohttp
 
-__version__ = "0.6.3-1"
+__version__ = "0.6.4"
 
 NULL_SERIAL_NO = "000W00000"
 HEATERLIST = "heaterlist"
@@ -390,7 +390,9 @@ class Room(IncomfortObject):
                 f"{OVERRIDE_MIN_TEMP}-{OVERRIDE_MAX_TEMP}."
             ) from exc
 
-        url = "data.json?heater={self._heater._heater_idx}"
-        url += f"&thermostat={int(self.room_no) - 1}"
-        url += f"&setpoint={int((setpoint - OVERRIDE_MIN_TEMP) * 10)}"
+        url = (
+            f"data.json?heater={self._heater._heater_idx}"
+            f"&thermostat={int(self.room_no) - 1}"
+            f"&setpoint={int((setpoint - OVERRIDE_MIN_TEMP) * 10)}"
+        )
         await self._get(url)
