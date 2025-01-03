@@ -40,7 +40,7 @@ if DEBUG_MODE is True:
 
 
 DEFAULT_HEATER_NO = 0
-DEFAULT_ROOM_NO = 2
+DEFAULT_ROOM_NO = 0
 
 
 def _parse_args():
@@ -73,6 +73,23 @@ def _parse_args():
         help="return raw JSON, useful for testing",
     )
 
+    parser.add_argument(
+        "-H",
+        "--heater",
+        type=int,
+        required=False,
+        default=DEFAULT_HEATER_NO,
+        help="select heater (0, 1, 2, 3, 4 or 5)",
+    )
+    parser.add_argument(
+        "-R",
+        "--room",
+        type=int,
+        required=False,
+        default=DEFAULT_ROOM_NO,
+        help="select room thermostat (0, 1 or 2)",
+    )
+
     args = parser.parse_args()
 
     if bool(args.username) ^ bool(args.password):
@@ -82,7 +99,7 @@ def _parse_args():
     return args
 
 
-async def main(loop):
+async def main():
     """Return the JSON as requested."""
 
     args = _parse_args()
@@ -108,12 +125,28 @@ async def main(loop):
         await session.close()
         return False
 
-    heater = heaters[DEFAULT_HEATER_NO]
+    if ((heater := int(args.heater)) + 1) > (nr_heaters := len(heaters)):
+        print(
+            f"Nr of heaters found: {nr_heaters}. "
+            f"Heater index {args.heater} is invalid"
+        )
+        await session.close()
+        return
+
+    heater = heaters[heater]
     await heater.update()
+
+    if (room := int(args.room) + 1) > (nr_rooms := len(heater.rooms)):
+        print(
+            f"Nr of rooms found for heater: {nr_rooms}. "
+            f"Room index {args.room} is invalid"
+        )
+        await session.close()
+        return
 
     if args.temp:
         try:
-            await heater.rooms[DEFAULT_ROOM_NO].set_override(args.temp)
+            await heater.rooms[room].set_override(args.temp)
         except IndexError:
             _LOGGER.error("IndexError - Hint: There is no valid room thermostat")
             raise
@@ -127,11 +160,10 @@ async def main(loop):
             status[f"room_{room.room_no}"] = room.status
         print(status)
 
-    if session:
-        await session.close()
+    await session.close()
 
 
 if __name__ == "__main__":  # called from CLI?
-    LOOP = asyncio.get_event_loop()
-    LOOP.run_until_complete(main(LOOP))
-    LOOP.close()
+    loop = asyncio.new_event_loop()
+    loop.run_until_complete(main())
+    loop.close()
