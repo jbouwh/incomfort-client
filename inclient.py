@@ -136,7 +136,7 @@ async def main():
     heater = heaters[heater]
     await heater.update()
 
-    if (room := int(args.room) + 1) > (nr_rooms := len(heater.rooms)):
+    if ((room := int(args.room)) + 1) > (nr_rooms := len(heater.rooms)):
         print(
             f"Nr of rooms found for heater: {nr_rooms}. "
             f"Room index {args.room} is invalid"
