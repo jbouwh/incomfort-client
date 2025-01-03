@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "incomfortclient"
-version = "0.5.0"
+version = "0.6.5-1"
 description = "An aiohttp-based client for Intergas InComfort/InTouch Lan2RF systems."
 authors = ["Jan Bouwhuis <jan@jbsoft.nl>"]
 maintainers = ["Jan Bouwhuis <jan@jbsoft.nl>"]
@@ -137,6 +137,7 @@ disable = [
   "too-many-instance-attributes",
   "too-many-lines",
   "too-many-locals",
+  "too-many-positional-arguments",
   "too-many-public-methods",
   "too-many-return-statements",
   "too-many-statements",
@@ -154,7 +155,7 @@ ignored-classes = "_CountingAttr"
 expected-line-ending-format = "LF"
 
 [tool.pylint.EXCEPTIONS]
-overgeneral-exceptions = ["Exception"]
+overgeneral-exceptions = ["builtin.Exception"]
 
 [tool.ruff.lint]
 select = [

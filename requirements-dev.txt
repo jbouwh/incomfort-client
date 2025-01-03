@@ -12,6 +12,8 @@ pycodestyle>=2.10.0
 pydocstyle>=6.2.3
 pyflakes>=3.0.1
 #
+poetry==1.8.5
+#
 pytest-asyncio==0.23.6
 pytest-aiohttp==1.0.5
 pytest-cov==5.0.0
