@@ -4,6 +4,7 @@
 """Python client library for the InterGas InComfort system (via Lan2RF gateway)."""
 
 from __future__ import annotations
+from typing import Any
 
 import aiohttp
 from aioresponses import aioresponses
@@ -20,7 +21,9 @@ GATEWAYS_WITH_HEATER = (
 )
 
 
-async def gwy_with_heaterlist(hostname, heaterlist=GATEWAYS_WITH_HEATER[0]) -> Gateway:
+async def gwy_with_heaterlist(
+    hostname: str | None, heaterlist: dict[str, Any]
+) -> Gateway:
     """Request the heaterlist from a mocked gateway."""
 
     with aioresponses() as mocked:
@@ -37,7 +40,7 @@ async def gwy_with_heaterlist(hostname, heaterlist=GATEWAYS_WITH_HEATER[0]) -> G
     return gwy
 
 
-async def heater_with_status(data_heater, heaterlist=GATEWAYS_WITH_HEATER[0]) -> Heater:
+async def heater_with_status(data_heater: Any, heaterlist: Any) -> Heater:
     """Update the heater status from a mocked gateway."""
 
     with aioresponses() as mocked:
