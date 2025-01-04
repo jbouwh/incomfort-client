@@ -11,22 +11,22 @@ repository = "https://github.com/jbouwh/incomfort-client"
 documentation = "https://github.com/jbouwh/incomfort-client"
 keywords = ["incomfort", "api", "async", "client"]
 classifiers = [
-  "Development Status :: 5 - Production/Stable",
-  "License :: OSI Approved :: MIT License",
-  "Operating System :: OS Independent",
-  "Framework :: AsyncIO",
-  "Intended Audience :: Developers",
-  "Natural Language :: English",
-  "Programming Language :: Python :: 3.9",
-  "Programming Language :: Python :: 3.10",
-  "Programming Language :: Python :: 3.11",
-  "Programming Language :: Python :: 3.12",
-  "Programming Language :: Python :: 3",
-  "Topic :: Software Development :: Libraries :: Python Modules",
-  "Topic :: Home Automation",
+    "Development Status :: 5 - Production/Stable",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Framework :: AsyncIO",
+    "Intended Audience :: Developers",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Home Automation",
 ]
 packages = [
-    { include = "incomfortclient", from = "src" },
+    {include= "incomfortclient", from = "src"},
 ]
 
 [tool.poetry.dependencies]
@@ -59,6 +59,9 @@ pre-commit-hooks = "^4.6.0"
 [tool.poetry.urls]
 "Bug Tracker" = "https://github.com/jbouwh/incomfort-client/issues"
 Changelog = "https://github.com/jbouwh/incomfort-client/releases"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
 
 [tool.coverage.report]
 show_missing = true
@@ -100,21 +103,21 @@ warn_unused_ignores = true
 
 [tool.pylint.MASTER]
 ignore = [
-  "tests",
+    "tests",
 ]
 
 [tool.pylint.BASIC]
 good-names = [
-  "_",
-  "ex",
-  "fp",
-  "i",
-  "id",
-  "j",
-  "k",
-  "on",
-  "Run",
-  "T",
+    "_",
+    "ex",
+    "fp",
+    "i",
+    "id",
+    "j",
+    "k",
+    "on",
+    "Run",
+    "T",
 ]
 
 [tool.pylint.DESIGN]
@@ -122,27 +125,27 @@ max-attributes = 8
 
 [tool.pylint."MESSAGES CONTROL"]
 disable = [
-  "format",
-  "abstract-method",
-  "cyclic-import",
-  "duplicate-code",
-  "global-statement",
-  "inconsistent-return-statements",
-  "locally-disabled",
-  "not-an-iterable",
-  "not-context-manager",
-  "too-few-public-methods",
-  "too-many-arguments",
-  "too-many-branches",
-  "too-many-instance-attributes",
-  "too-many-lines",
-  "too-many-locals",
-  "too-many-positional-arguments",
-  "too-many-public-methods",
-  "too-many-return-statements",
-  "too-many-statements",
-  "unnecessary-pass",
-  "unused-argument",
+    "format",
+    "abstract-method",
+    "cyclic-import",
+    "duplicate-code",
+    "global-statement",
+    "inconsistent-return-statements",
+    "locally-disabled",
+    "not-an-iterable",
+    "not-context-manager",
+    "too-few-public-methods",
+    "too-many-arguments",
+    "too-many-branches",
+    "too-many-instance-attributes",
+    "too-many-lines",
+    "too-many-locals",
+    "too-many-positional-arguments",
+    "too-many-public-methods",
+    "too-many-return-statements",
+    "too-many-statements",
+    "unnecessary-pass",
+    "unused-argument",
 ]
 
 [tool.pylint.REPORTS]
@@ -159,15 +162,15 @@ overgeneral-exceptions = ["builtin.Exception"]
 
 [tool.ruff.lint]
 select = [
-  "C",
-  "E",
-  "F",
-  "W",
-  "B",
+    "C",
+    "E",
+    "F",
+    "W",
+    "B",
 ]
 ignore = [
-  "E203",
-  "E501",
+    "E203",
+    "E501",
 ]
 
 [tool.ruff.lint.flake8-pytest-style]
