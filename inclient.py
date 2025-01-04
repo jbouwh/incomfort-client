@@ -31,7 +31,7 @@ if DEBUG_MODE is True:
 
     _LOGGER.setLevel(logging.DEBUG)
 
-    debugpy.listen(address=(DEBUG_ADDR, DEBUG_PORT))
+    debugpy.listen((DEBUG_ADDR, DEBUG_PORT))
     print(f"Debugging is enabled, listening on: {DEBUG_ADDR}:{DEBUG_PORT}.")
     print(" - execution paused, waiting for debugger to attach...")
 
@@ -43,7 +43,7 @@ DEFAULT_HEATER_NO = 0
 DEFAULT_ROOM_NO = 0
 
 
-def _parse_args():
+def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
 
     parser.add_argument("gateway", help="hostname/address of the InComfort gateway")
@@ -99,7 +99,7 @@ def _parse_args():
     return args
 
 
-async def main():
+async def main() -> bool:
     """Return the JSON as requested."""
 
     args = _parse_args()
@@ -125,28 +125,28 @@ async def main():
         await session.close()
         return False
 
-    if ((heater := int(args.heater)) + 1) > (nr_heaters := len(heaters)):
+    if ((heater_index := int(args.heater)) + 1) > (nr_heaters := len(heaters)):
         print(
             f"Nr of heaters found: {nr_heaters}. "
             f"Heater index {args.heater} is invalid"
         )
         await session.close()
-        return
+        return False
 
-    heater = heaters[heater]
+    heater = heaters[heater_index]
     await heater.update()
 
-    if ((room := int(args.room)) + 1) > (nr_rooms := len(heater.rooms)):
+    if ((room_index := int(args.room)) + 1) > (nr_rooms := len(heater.rooms)):
         print(
             f"Nr of rooms found for heater: {nr_rooms}. "
             f"Room index {args.room} is invalid"
         )
         await session.close()
-        return
+        return False
 
     if args.temp:
         try:
-            await heater.rooms[room].set_override(args.temp)
+            await heater.rooms[room_index].set_override(args.temp)
         except IndexError:
             _LOGGER.error("IndexError - Hint: There is no valid room thermostat")
             raise
@@ -161,6 +161,7 @@ async def main():
         print(status)
 
     await session.close()
+    return True
 
 
 if __name__ == "__main__":  # called from CLI?
