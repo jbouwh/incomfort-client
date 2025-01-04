@@ -6,7 +6,13 @@
 from __future__ import annotations
 
 import pytest
-from common import HOSTNAME, SERIAL_NO_0, SERIAL_NO_1, gwy_with_heaterlist
+from common import (
+    GATEWAYS_WITH_HEATER,
+    HOSTNAME,
+    SERIAL_NO_0,
+    SERIAL_NO_1,
+    gwy_with_heaterlist,
+)
 
 from incomfortclient import (
     HEATERLIST,
@@ -28,11 +34,14 @@ GATEWAYS_WITH_HEATERS = (
     {HEATERLIST: [None, NULL_SERIAL_NO, None, None, SERIAL_NO_0, None, None, None]},
 )
 
+# pylint: disable=protected-access
+
 
 @pytest.mark.asyncio
-async def test_gateway_invalid():
+async def test_gateway_invalid() -> None:
+    """Test an invalid gateway."""
     try:
-        await gwy_with_heaterlist(None)
+        await gwy_with_heaterlist(None, GATEWAYS_WITH_HEATER[0])
     except InvalidGateway:
         return
     raise AssertionError
@@ -40,9 +49,10 @@ async def test_gateway_invalid():
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("index", range(len(GATEWAYS_SANS_HEATERS)))
-async def test_heaterlist_empty(index, gateways=GATEWAYS_SANS_HEATERS):
+async def test_heaterlist_empty(index: int) -> None:
+    """Test the gateway with an empty heater list."""
     try:
-        await gwy_with_heaterlist(HOSTNAME, heaterlist=gateways[index])
+        await gwy_with_heaterlist(HOSTNAME, heaterlist=GATEWAYS_SANS_HEATERS[index])
     except InvalidHeaterList:
         return
     raise AssertionError
@@ -50,8 +60,9 @@ async def test_heaterlist_empty(index, gateways=GATEWAYS_SANS_HEATERS):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("index", range(len(GATEWAYS_WITH_HEATERS)))
-async def test_heaterlist_valid(index, gateways=GATEWAYS_WITH_HEATERS):
-    gwy = await gwy_with_heaterlist(HOSTNAME, heaterlist=gateways[index])
+async def test_heaterlist_valid(index: int) -> None:
+    """Test the gateway with a valid heater list."""
+    gwy = await gwy_with_heaterlist(HOSTNAME, heaterlist=GATEWAYS_WITH_HEATERS[index])
 
     assert gwy._heaters[0].serial_no == SERIAL_NO_0
     assert len(gwy._heaters) < 2 or gwy._heaters[1].serial_no == SERIAL_NO_1

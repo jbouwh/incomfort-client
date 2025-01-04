@@ -1,8 +1,191 @@
-[tool.isort]
-  profile = "black"
-  multi_line_output = 3
+[tool.poetry]
+name = "incomfortclient"
+version = "0.6.5-1"
+description = "An aiohttp-based client for Intergas InComfort/InTouch Lan2RF systems."
+authors = ["Jan Bouwhuis <jan@jbsoft.nl>"]
+maintainers = ["Jan Bouwhuis <jan@jbsoft.nl>"]
+license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/jbouwh/incomfort-client"
+repository = "https://github.com/jbouwh/incomfort-client"
+documentation = "https://github.com/jbouwh/incomfort-client"
+keywords = ["incomfort", "api", "async", "client"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Framework :: AsyncIO",
+    "Intended Audience :: Developers",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Home Automation",
+]
+packages = [
+    {include= "incomfortclient", from = "src"},
+]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+aiohttp = ">=3.8.1"
+
+[tool.poetry.group.dev.dependencies]
+aioresponses = ">=0.7.6"
+debugpy = "^1.8.1"
+pre-commit = "^3.7.1"
+pytest-asyncio = "^0.23.7"
+pytest-aiohttp = "^1.0.5"
+pytest-cov = "^5.0.0"
+pytest-freezer = "^0.4.8"
+pytest-socket = "^0.7.0"
+pytest-sugar = "^1.0.0"
+pytest-timeout = "^2.3.1"
+pytest-unordered = "^0.6.0"
+pytest-picked = "^0.5.0"
+pytest-xdist = "^3.6.1"
+pytest = "^8.2.2"
+pytest-github-actions-annotate-failures = "^0.2.0"
+pylint = "^3.2.3"
+ruff = "^0.4.8"
+yamllint = "^1.35.1"
+codespell = "^2.3.0"
+mypy = "^1.10.0"
+pre-commit-hooks = "^4.6.0"
+
+[tool.poetry.urls]
+"Bug Tracker" = "https://github.com/jbouwh/incomfort-client/issues"
+Changelog = "https://github.com/jbouwh/incomfort-client/releases"
 
 [tool.pytest.ini_options]
-pythonpath = [
-  "."
+pythonpath = ["src"]
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 50
+
+[tool.coverage.run]
+plugins = ["covdefaults"]
+source = ["incomfortclient"]
+
+[tool.mypy]
+# Specify the target platform details in config, so your developers are
+# free to run mypy on Windows, Linux, or macOS and get consistent
+# results.
+platform = "linux"
+python_version = "3.9"
+
+# show error messages from unrelated files
+follow_imports = "normal"
+
+# suppress errors about unsatisfied imports
+ignore_missing_imports = true
+
+# be strict
+check_untyped_defs = true
+disallow_any_generics = true
+disallow_incomplete_defs = true
+disallow_subclassing_any = true
+disallow_untyped_calls = true
+disallow_untyped_decorators = true
+disallow_untyped_defs = true
+no_implicit_optional = true
+strict_optional = true
+warn_incomplete_stub = true
+warn_no_return = true
+warn_redundant_casts = true
+warn_return_any = true
+warn_unused_configs = true
+warn_unused_ignores = true
+
+[tool.pylint.MASTER]
+ignore = [
+    "tests",
 ]
+
+[tool.pylint.BASIC]
+good-names = [
+    "_",
+    "ex",
+    "fp",
+    "i",
+    "id",
+    "j",
+    "k",
+    "on",
+    "Run",
+    "T",
+]
+
+[tool.pylint.DESIGN]
+max-attributes = 8
+
+[tool.pylint."MESSAGES CONTROL"]
+disable = [
+    "format",
+    "abstract-method",
+    "cyclic-import",
+    "duplicate-code",
+    "global-statement",
+    "inconsistent-return-statements",
+    "locally-disabled",
+    "not-an-iterable",
+    "not-context-manager",
+    "too-few-public-methods",
+    "too-many-arguments",
+    "too-many-branches",
+    "too-many-instance-attributes",
+    "too-many-lines",
+    "too-many-locals",
+    "too-many-positional-arguments",
+    "too-many-public-methods",
+    "too-many-return-statements",
+    "too-many-statements",
+    "unnecessary-pass",
+    "unused-argument",
+]
+
+[tool.pylint.REPORTS]
+reports = "no"
+
+[tool.pylint.TYPECHECK]
+ignored-classes = "_CountingAttr"
+
+[tool.pylint.FORMAT]
+expected-line-ending-format = "LF"
+
+[tool.pylint.EXCEPTIONS]
+overgeneral-exceptions = ["builtin.Exception"]
+
+[tool.ruff.lint]
+select = [
+    "C",
+    "E",
+    "F",
+    "W",
+    "B",
+]
+ignore = [
+    "E203",
+    "E501",
+]
+
+[tool.ruff.lint.flake8-pytest-style]
+fixture-parentheses = false
+mark-parentheses = false
+
+[tool.ruff.lint.isort]
+known-first-party = ["incomfortclient"]
+force-sort-within-sections = true
+split-on-trailing-comma = false
+combine-as-imports = true
+
+[tool.ruff.lint.mccabe]
+max-complexity = 25
+
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core>=1.0.0"]

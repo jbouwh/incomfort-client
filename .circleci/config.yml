@@ -1,8 +1,8 @@
+---
 # CircleCI 2.1 configuration file for https://github.com/zxdavb/geniushub-client
 # Check https://circleci.com/docs/2.0/language-python/ for more details
 
 version: 2.1
-
 
 jobs:
 
@@ -16,7 +16,6 @@ jobs:
       - run:
           name: Verify git tag vs. package version
           command: python setup.py verify  # NOTE: $CIRCLE_TAG is not available to su
-
 
   check_lint:
     docker: *docker_config
@@ -39,7 +38,6 @@ jobs:
             isort --check --diff *client.py
             isort --check --diff incomfort*
 
-
   run_tests:
     docker: *docker_config
 
@@ -54,7 +52,6 @@ jobs:
 
       - run:
           command: pytest tests -v
-
 
   deploy_package:
     docker: *docker_config
@@ -78,7 +75,6 @@ jobs:
             echo -e "  password = $PYPI_TOKEN                       " >> ~/.pypirc
 
             twine upload -r pypi dist/*
-
 
 workflows:
   version: 2
