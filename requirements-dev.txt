@@ -1,3 +1,5 @@
+aioresponses>=0.7.6
+
 setuptools==70.0.0
 wheel~=0.43.0
 
