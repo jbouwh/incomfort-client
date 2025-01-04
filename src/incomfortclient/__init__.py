@@ -11,11 +11,9 @@ from __future__ import annotations
 
 import logging
 from enum import IntEnum
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import aiohttp
-
-__version__ = "0.6.5-1"
 
 NULL_SERIAL_NO = "000W00000"
 HEATERLIST = "heaterlist"
@@ -105,7 +103,9 @@ _LOGGER = logging.getLogger(__name__)
 # pylint: disable=protected-access, missing-docstring
 
 
-def _value(key_stub: str, data_dict: dict) -> None | float:
+def _value(key_stub: str, data_dict: dict[str, Any]) -> None | float:
+    """Decode value from msb and lsb."""
+
     def _convert(most_significant_byte: int, least_significant_byte: int) -> float:
         return (most_significant_byte * 256 + least_significant_byte) / 100.0
 
@@ -116,7 +116,7 @@ def _value(key_stub: str, data_dict: dict) -> None | float:
 class IncomfortError(Exception):
     """Base class for InComfor exceptions."""
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: str, **kwargs: int) -> None:
         super().__init__(*args, **kwargs)
         self.message = args[0] if args else None
 
@@ -143,9 +143,11 @@ class IncomfortObject:
     """Base for InComfortObjects."""
 
     def __init__(self) -> None:
-        self._gateway: Gateway = None
+        self._gateway: Gateway | None = None
 
-    async def _get(self, url: str):
+    async def _get(self, url: str) -> dict[str, Any]:
+        if TYPE_CHECKING:
+            assert self._gateway is not None
         _LOGGER.debug(
             "_get(url=%s, auth=%s)", url, "REDACTED" if self._gateway._auth else None
         )
@@ -156,7 +158,7 @@ class IncomfortObject:
             raise_for_status=True,
             timeout=self._gateway._timeout,
         ) as resp:
-            response = await resp.json(content_type=None)
+            response: dict[str, Any] = await resp.json(content_type=None)
 
         _LOGGER.debug("_get(url=%s): response = %s", url, response)
         return response
@@ -165,12 +167,15 @@ class IncomfortObject:
 class Gateway(IncomfortObject):
     """Representation of an InComfort (Lan2RF) Gateway."""
 
+    _auth: aiohttp.BasicAuth | None
+    _url_base: str
+
     def __init__(
         self,
         hostname: str,
-        username: str = None,
-        password: str = None,
-        session: aiohttp.ClientSession = None,
+        username: str | None = None,
+        password: str | None = None,
+        session: aiohttp.ClientSession | None = None,
         debug: bool = False,
     ) -> None:
         if debug is True:
@@ -184,7 +189,6 @@ class Gateway(IncomfortObject):
         self._hostname = hostname
         self._heaters: None | list[Heater] = None
 
-        # TODO: how to safely close session if one was created here?
         self._session = session if session else aiohttp.ClientSession()
         self._timeout = aiohttp.ClientTimeout(total=CLIENT_TIMEOUT)
         if username is None:
@@ -192,10 +196,9 @@ class Gateway(IncomfortObject):
             self._auth = None
         else:
             self._url_base = f"http://{hostname}/protect/"
-            self._auth = aiohttp.BasicAuth(login=username, password=password)
+            self._auth = aiohttp.BasicAuth(login=username, password=password or "")
 
-    # FIXME CC: heaters = incomfort_data["heaters"] = list(await client.heaters())
-    async def heaters(self, force_refresh: bool = None) -> list[Heater]:
+    async def heaters(self, force_refresh: bool = False) -> list[Heater]:
         """Retrieve the list of Heaters from the Gateway."""
         if self._heaters is not None and not force_refresh:
             return self._heaters
@@ -203,7 +206,7 @@ class Gateway(IncomfortObject):
         try:
             heaters = dict(await self._get("heaterlist.json"))[HEATERLIST]
         except (aiohttp.ClientError, UnicodeDecodeError) as exc:
-            raise InvalidGateway(exc) from exc
+            raise InvalidGateway from exc
 
         self._heaters = [
             Heater(h, idx, self)
@@ -229,9 +232,9 @@ class Heater(IncomfortObject):
         self._heater_idx: int = idx
         self._gateway: Gateway = gateway
 
-        self._data: dict = {}
-        self._status: dict = {}
-        self._rooms: list[Room] = None
+        self._data: dict[str, Any] = {}
+        self._status: dict[str, Any] = {}
+        self._rooms: list[Room] | None = None
         self.display_code: DisplayCode | None = None
         self.fault_code: FaultCode | None = None
         self._last_display_code: int | None = None
@@ -310,17 +313,17 @@ class Heater(IncomfortObject):
         return bool(self._data["IO"] & BITMASK_TAP)
 
     @property
-    def heater_temp(self) -> float:
+    def heater_temp(self) -> float | None:
         """Return the supply temperature of the CV (circulating volume)."""
         return _value("ch_temp", self._data)
 
     @property
-    def tap_temp(self) -> float:
+    def tap_temp(self) -> float | None:
         """Return the current temperature of the HW (hot water)."""
         return _value("tap_temp", self._data)
 
     @property
-    def pressure(self) -> float:
+    def pressure(self) -> float | None:
         """Return the water pressure of the CH (central heating)."""
         return _value("ch_pressure", self._data)
 
@@ -349,12 +352,12 @@ class Room(IncomfortObject):
 
         self._gateway = heater._gateway
         self._heater = heater
-        self._data: dict = {}
+        self._data: dict[str, Any] = {}
 
         self.room_no = room_no
 
     @property
-    def status(self) -> dict:
+    def status(self) -> dict[str, Any]:
         """Return the current state of the room."""
         status = {}
 
