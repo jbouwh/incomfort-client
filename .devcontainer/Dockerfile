@@ -48,8 +48,6 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 WORKDIR /tmp
 
 # Install Python dependencies from requirements
-COPY requirements.txt ./
-RUN uv pip install -r requirements.txt
 COPY requirements-dev.txt ./
 RUN uv pip install -r requirements-dev.txt
 
