@@ -9,6 +9,7 @@ active Room thermostats.
 
 from __future__ import annotations
 
+import json
 import logging
 from enum import IntEnum
 from typing import TYPE_CHECKING, Any
@@ -159,10 +160,14 @@ class IncomfortObject:
             raise_for_status=True,
             timeout=self._gateway._timeout,
         ) as resp:
-            response: dict[str, Any] = await resp.json(content_type=None)
+            response: str = await resp.text()
 
         _LOGGER.debug("_get(url=%s): response = %s", url, response)
-        return response
+        # Replace potential invalid \ char in response before coding
+        response = response.replace("\\", "0")
+        response_json: dict[str, Any] = json.loads(response)
+
+        return response_json
 
 
 class Gateway(IncomfortObject):

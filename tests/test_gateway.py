@@ -11,6 +11,8 @@ from common import (
     HOSTNAME,
     SERIAL_NO_0,
     SERIAL_NO_1,
+    SERIAL_NO_2,
+    SERIAL_NO_2_CORRECTED,
     gwy_with_heaterlist,
 )
 
@@ -64,5 +66,17 @@ async def test_heaterlist_valid(index: int) -> None:
     """Test the gateway with a valid heater list."""
     gwy = await gwy_with_heaterlist(HOSTNAME, heaterlist=GATEWAYS_WITH_HEATERS[index])
 
-    assert gwy._heaters[0].serial_no == SERIAL_NO_0
+    assert gwy._heaters and gwy._heaters[0].serial_no == SERIAL_NO_0
     assert len(gwy._heaters) < 2 or gwy._heaters[1].serial_no == SERIAL_NO_1
+
+
+@pytest.mark.asyncio
+async def test_heaterlist_valid_alt_sn() -> None:
+    """Test the gateway with a valid heater list."""
+    heaterlist_response = (
+        '{"heaterlist":' f'["{SERIAL_NO_2}",null,null,null,null,null,null,null]' "}"
+    )
+    gwy = await gwy_with_heaterlist(HOSTNAME, heaterlist=heaterlist_response)
+
+    assert gwy._heaters and gwy._heaters[0].serial_no == SERIAL_NO_2_CORRECTED
+    assert len(gwy._heaters) < 2 or gwy._heaters[1].serial_no == SERIAL_NO_2_CORRECTED
