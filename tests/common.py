@@ -15,6 +15,8 @@ HOSTNAME = "192.168.0.1"
 
 SERIAL_NO_0 = "2110f25190"
 SERIAL_NO_1 = "2110f25191"
+SERIAL_NO_2 = "2303\\02041"
+SERIAL_NO_2_CORRECTED = "2303002041"
 
 GATEWAYS_WITH_HEATER = (
     {HEATERLIST: [SERIAL_NO_0, None, None, None, None, None, None, None]},
@@ -22,16 +24,22 @@ GATEWAYS_WITH_HEATER = (
 
 
 async def gwy_with_heaterlist(
-    hostname: str | None, heaterlist: dict[str, Any]
+    hostname: str | None, heaterlist: str | dict[str, Any]
 ) -> Gateway:
     """Request the heaterlist from a mocked gateway."""
 
     with aioresponses() as mocked:
         if hostname:
-            mocked.get(
-                f"http://{hostname}/heaterlist.json",
-                payload=heaterlist,
-            )
+            if isinstance(heaterlist, dict):
+                mocked.get(
+                    f"http://{hostname}/heaterlist.json",
+                    payload=heaterlist,
+                )
+            else:
+                mocked.get(
+                    f"http://{hostname}/heaterlist.json",
+                    body=heaterlist.encode(),
+                )
 
         async with aiohttp.ClientSession() as session:
             gwy = Gateway(hostname or HOSTNAME, session=session)
