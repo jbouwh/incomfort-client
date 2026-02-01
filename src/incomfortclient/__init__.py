@@ -44,6 +44,7 @@ class DisplayCode(IntEnum):
     TAPWATER_INT = 51
     SENSOR_TEST = 85
     CENTRAL_HEATING = 102
+    CENTRAL_HEATING_LOW = 104
     STANDBY = 126
     OFF = 127
     POSTRUN_BOYLER = 153
