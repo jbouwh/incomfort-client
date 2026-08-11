@@ -3,8 +3,6 @@
 #
 """Python client library for the InterGas InComfort system (via Lan2RF gateway)."""
 
-from __future__ import annotations
-
 import pytest
 from common import GATEWAYS_WITH_HEATER, SERIAL_NO_0, heater_with_status
 
@@ -163,29 +161,32 @@ HEATER_WITH_ROOMS_ALT = (
 )
 
 
-@pytest.mark.asyncio
-async def test_heater_sans_rooms() -> None:
+@pytest.mark.parametrize(
+    ("data_heater", "heater_list"), [(HEATER_SANS_ROOMS[0], GATEWAYS_WITH_HEATER[0])]
+)
+async def test_heater_sans_rooms(gateway: str) -> None:
     """Test heater without rooms."""
-    heater = await heater_with_status(HEATER_SANS_ROOMS[0], GATEWAYS_WITH_HEATER[0])
+    heater = await heater_with_status(gateway)
     assert heater.status == HEATER_SANS_ROOMS[1]
     assert len(heater.rooms) == 0
 
 
-@pytest.mark.asyncio
-async def test_heater_with_rooms() -> None:
+@pytest.mark.parametrize(
+    ("data_heater", "heater_list"), [(HEATER_WITH_ROOMS[0], GATEWAYS_WITH_HEATER[0])]
+)
+async def test_heater_with_rooms(gateway: str) -> None:
     """Test heater with rooms."""
-    heater = await heater_with_status(
-        HEATER_WITH_ROOMS[0], heaterlist=GATEWAYS_WITH_HEATER[0]
-    )
+    heater = await heater_with_status(gateway)
     assert heater.status == HEATER_WITH_ROOMS[1]
     assert len(heater.rooms) == 1 and heater.rooms[0].status == HEATER_WITH_ROOMS[2]
 
 
-@pytest.mark.asyncio
-async def test_heater_with_rooms_alt() -> None:
+@pytest.mark.parametrize(
+    ("data_heater", "heater_list"),
+    [(HEATER_WITH_ROOMS_ALT[0], GATEWAYS_WITH_HEATER[0])],
+)
+async def test_heater_with_rooms_alt(gateway: str) -> None:
     """Test heater with rooms."""
-    heater = await heater_with_status(
-        HEATER_WITH_ROOMS_ALT[0], heaterlist=GATEWAYS_WITH_HEATER[0]
-    )
+    heater = await heater_with_status(gateway)
     assert heater.status == HEATER_WITH_ROOMS_ALT[1]
     assert len(heater.rooms) == 1 and heater.rooms[0].status == HEATER_WITH_ROOMS_ALT[2]

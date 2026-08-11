@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-#
 """Python client library for the InterGas InComfort system (via Lan2RF gateway).
 
 Each Gateway can have up to 8 Heaters (boilers) and each Heater can have 0-2
@@ -215,7 +212,7 @@ class Gateway(IncomfortObject):
 
         try:
             heaters = dict(await self._get("heaterlist.json"))[HEATERLIST]
-        except (aiohttp.ClientError, UnicodeDecodeError) as exc:
+        except (aiohttp.ClientError, UnicodeDecodeError, TimeoutError) as exc:
             raise InvalidGateway from exc
 
         self._heaters = [
