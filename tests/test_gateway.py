@@ -1,14 +1,9 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-#
 """Python client library for the InterGas InComfort system (via Lan2RF gateway)."""
 
-from __future__ import annotations
+from aiohttp import ClientError
 
 import pytest
 from common import (
-    GATEWAYS_WITH_HEATER,
-    HOSTNAME,
     SERIAL_NO_0,
     SERIAL_NO_1,
     SERIAL_NO_2,
@@ -39,44 +34,44 @@ GATEWAYS_WITH_HEATERS = (
 # pylint: disable=protected-access
 
 
-@pytest.mark.asyncio
-async def test_gateway_invalid() -> None:
-    """Test an invalid gateway."""
+@pytest.mark.parametrize(
+    "heater_list_exc", [ClientError, UnicodeDecodeError, TimeoutError]
+)
+async def test_gateway_invalid(gateway: str) -> None:
+    """Test an invalid gateway request."""
     try:
-        await gwy_with_heaterlist(None, GATEWAYS_WITH_HEATER[0])
+        await gwy_with_heaterlist(gateway)
     except InvalidGateway:
         return
     raise AssertionError
 
 
-@pytest.mark.asyncio
-@pytest.mark.parametrize("index", range(len(GATEWAYS_SANS_HEATERS)))
-async def test_heaterlist_empty(index: int) -> None:
+@pytest.mark.parametrize("heater_list", GATEWAYS_SANS_HEATERS)
+async def test_heaterlist_empty(gateway: str) -> None:
     """Test the gateway with an empty heater list."""
     try:
-        await gwy_with_heaterlist(HOSTNAME, heaterlist=GATEWAYS_SANS_HEATERS[index])
+        await gwy_with_heaterlist(gateway)
     except InvalidHeaterList:
         return
     raise AssertionError
 
 
-@pytest.mark.asyncio
-@pytest.mark.parametrize("index", range(len(GATEWAYS_WITH_HEATERS)))
-async def test_heaterlist_valid(index: int) -> None:
+@pytest.mark.parametrize("heater_list", GATEWAYS_WITH_HEATERS)
+async def test_heaterlist_valid(gateway: str) -> None:
     """Test the gateway with a valid heater list."""
-    gwy = await gwy_with_heaterlist(HOSTNAME, heaterlist=GATEWAYS_WITH_HEATERS[index])
+    gwy = await gwy_with_heaterlist(gateway)
 
     assert gwy._heaters and gwy._heaters[0].serial_no == SERIAL_NO_0
     assert len(gwy._heaters) < 2 or gwy._heaters[1].serial_no == SERIAL_NO_1
 
 
-@pytest.mark.asyncio
-async def test_heaterlist_valid_alt_sn() -> None:
+@pytest.mark.parametrize(
+    "heater_list",
+    ['{"heaterlist":' f'["{SERIAL_NO_2}",null,null,null,null,null,null,null]' "}"],
+)
+async def test_heaterlist_valid_alt_sn(gateway: str) -> None:
     """Test the gateway with a valid heater list."""
-    heaterlist_response = (
-        '{"heaterlist":' f'["{SERIAL_NO_2}",null,null,null,null,null,null,null]' "}"
-    )
-    gwy = await gwy_with_heaterlist(HOSTNAME, heaterlist=heaterlist_response)
+    gwy = await gwy_with_heaterlist(gateway)
 
     assert gwy._heaters and gwy._heaters[0].serial_no == SERIAL_NO_2_CORRECTED
     assert len(gwy._heaters) < 2 or gwy._heaters[1].serial_no == SERIAL_NO_2_CORRECTED
