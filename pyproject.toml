@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "incomfort-client"
-version = "0.7.0"
+version = "0.7.1"
 description = "An aiohttp-based client for Intergas InComfort/InTouch Lan2RF systems."
 authors = ["Jan Bouwhuis <jan@jbsoft.nl>"]
 maintainers = ["Jan Bouwhuis <jan@jbsoft.nl>"]
@@ -23,7 +23,7 @@ classifiers = [
     "Topic :: Home Automation",
 ]
 packages = [
-    {include = "incomfortclient", from = "src"},
+    {include= "incomfortclient", from = "src"},
 ]
 
 [tool.poetry.dependencies]
@@ -182,7 +182,7 @@ mark-parentheses = false
 known-first-party = ["incomfortclient"]
 force-sort-within-sections = true
 split-on-trailing-comma = false
-combine-as-imports = true
+"combine-as-imports" = true
 
 [tool.ruff.lint.mccabe]
 max-complexity = 25
