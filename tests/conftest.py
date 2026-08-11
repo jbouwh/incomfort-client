@@ -1,10 +1,11 @@
 """Fixtures for incomfort backend library."""
 
+from collections.abc import Awaitable, Callable
 from typing import Any
 
 from aiohttp import web
 
-from pytest_aiohttp import AiohttpServer
+from aiohttp.test_utils import TestServer
 import pytest
 
 
@@ -28,7 +29,7 @@ def mock_data_heater() -> dict[str, Any]:
 
 @pytest.fixture(name="gateway")
 async def mock_gateway(
-    aiohttp_server: AiohttpServer,
+    aiohttp_server: Callable[[web.Application], Awaitable[TestServer]],
     heater_list: dict[str, list[str | None]] | str,
     data_heater: dict[str, Any],
     heater_list_exc: Exception | None,
