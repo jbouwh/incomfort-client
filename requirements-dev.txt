@@ -1,6 +1,6 @@
 aioresponses>=0.7.6
 
-setuptools==83.0.0
+setuptools==84.1.0
 wheel~=0.43.0
 
 black>=24.3.0
